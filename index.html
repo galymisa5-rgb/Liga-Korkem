@@ -38,6 +38,23 @@ body{
   padding-bottom:60px;
 }
 .wrap{max-width:1180px;margin:0 auto;padding:0 20px;}
+#loadingOverlay{
+  position:fixed;inset:0;z-index:9999;
+  background:var(--pitch-0);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;
+  transition:opacity .35s ease;
+}
+#loadingOverlay.hide{opacity:0;pointer-events:none;}
+.loading-spinner{
+  width:38px;height:38px;border-radius:50%;
+  border:3px solid rgba(255,255,255,.12);border-top-color:var(--turf-bright);
+  animation:spin .8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
+.loading-text{
+  font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.14em;
+  color:var(--ink-dim);text-transform:uppercase;
+}
 h1,h2,h3{font-family:'Bebas Neue',sans-serif;letter-spacing:.03em;margin:0;}
 .eyebrow{
   font-family:'JetBrains Mono',monospace;
@@ -217,11 +234,11 @@ input:focus,select:focus{outline:2px solid var(--turf);outline-offset:1px;}
 .fcard{
   position:relative;aspect-ratio:3/4.15;
   filter:drop-shadow(0 18px 26px rgba(0,0,0,.55));
+  clip-path:polygon(9% 0%,91% 0%,100% 13%,100% 76%,50% 100%,0% 76%,0% 13%);
+  container-type:inline-size;
 }
 .fcard-shape{
   position:absolute;inset:0;
-  clip-path:polygon(9% 0%,91% 0%,100% 13%,100% 76%,50% 100%,0% 76%,0% 13%);
-  overflow:hidden;
 }
 .fcard-shape::before{
   content:"";position:absolute;inset:0;
@@ -238,9 +255,9 @@ input:focus,select:focus{outline:2px solid var(--turf);outline-offset:1px;}
 .tier-silver .fcard-shape{background:linear-gradient(165deg,#eef2f4 0%,#c3ccd2 40%,#7d8a92 100%);}
 .tier-bronze .fcard-shape{background:linear-gradient(165deg,#e8bd8d 0%,#c48a52 40%,#7c4e28 100%);}
 .fcard-content{position:relative;height:100%;display:flex;flex-direction:column;padding:6% 10% 4%;}
-.fcard-top{display:flex;justify-content:space-between;align-items:flex-start;}
+.fcard-top{display:flex;justify-content:space-between;align-items:flex-start;position:relative;z-index:2;}
 .fcard-topleft{display:flex;flex-direction:column;align-items:flex-start;}
-.ovr2{font-family:'Bebas Neue',sans-serif;font-size:15vw;max-font-size:34px;font-size:clamp(24px,8.5cqw,36px);line-height:.82;color:#2a1e08;}
+.ovr2{font-family:'Bebas Neue',sans-serif;line-height:.82;color:#2a1e08;font-size:clamp(24px,8.5cqw,36px);}
 .postag{font-family:'Bebas Neue',sans-serif;font-size:clamp(11px,3.2cqw,15px);color:#2a1e08;letter-spacing:.03em;
   border-bottom:2px solid rgba(42,30,8,.55);padding-bottom:4px;margin-bottom:6px;}
 .flagbadge{font-size:clamp(15px,4.5cqw,20px);line-height:1;}
@@ -254,19 +271,19 @@ input:focus,select:focus{outline:2px solid var(--turf);outline-offset:1px;}
 .paid-pill.yes{background:#2f7d3d;box-shadow:0 0 0 3px rgba(47,125,61,.25);}
 .paid-pill.no{background:#a13327;box-shadow:0 0 0 3px rgba(161,51,39,.25);}
 .fcard-photo-wrap{
-  position:absolute;right:2%;top:6%;width:66%;height:54%;
-  display:flex;align-items:flex-end;justify-content:center;overflow:visible;
+  position:absolute;left:8%;right:8%;top:14%;bottom:30%;
+  display:flex;align-items:center;justify-content:center;overflow:hidden;z-index:1;
 }
 .fcard-photo-img{
-  width:100%;height:100%;object-fit:cover;object-position:center top;
-  -webkit-mask-image:linear-gradient(to bottom, black 62%, transparent 96%);
-  mask-image:linear-gradient(to bottom, black 62%, transparent 96%);
+  width:100%;height:100%;object-fit:cover;object-position:center 15%;
+  -webkit-mask-image:radial-gradient(ellipse 68% 78% at 50% 42%, black 42%, rgba(0,0,0,.75) 60%, transparent 92%);
+  mask-image:radial-gradient(ellipse 68% 78% at 50% 42%, black 42%, rgba(0,0,0,.75) 60%, transparent 92%);
 }
 .fcard-photo-placeholder{
-  width:70%;height:85%;display:flex;align-items:center;justify-content:center;
-  font-size:38px;opacity:.35;filter:grayscale(1);
+  width:100%;height:100%;display:flex;align-items:center;justify-content:center;
+  font-size:38px;opacity:.3;filter:grayscale(1);
 }
-.fcard-bottom{margin-top:auto;text-align:center;}
+.fcard-bottom{margin-top:auto;text-align:center;position:relative;z-index:2;}
 .fcard-name2{
   font-family:'Bebas Neue',sans-serif;font-size:clamp(14px,4.6cqw,20px);color:#2a1e08;
   letter-spacing:.03em;padding-bottom:5px;margin-bottom:6px;
@@ -316,6 +333,25 @@ input:focus,select:focus{outline:2px solid var(--turf);outline-offset:1px;}
   border:1px solid var(--line);border-radius:8px;color:var(--ink-dim);padding:5px 8px;
 }
 .bench-note{margin-top:14px;font-size:12.5px;color:var(--ink-dim);font-family:'JetBrains Mono',monospace;}
+
+.manual-edit{background:rgba(255,255,255,.03);border:1px dashed var(--line);border-radius:14px;padding:16px 18px;margin-top:20px;}
+.manual-row{
+  display:flex;align-items:center;gap:10px;padding:6px 0;border-top:1px solid rgba(255,255,255,.06);
+}
+.manual-row:first-of-type{border-top:none;}
+.manual-row .raw{flex:1;font-size:13px;}
+.manual-row select{min-width:140px;}
+
+.referees-block{margin-top:24px;background:var(--pitch-2);border:1px solid var(--line);border-radius:14px;padding:16px 18px;}
+.referees-display{
+  white-space:pre-wrap;font-family:'Inter',sans-serif;font-size:13.5px;line-height:1.6;
+  color:var(--ink);margin:10px 0 0;background:none;border:none;padding:0;
+}
+.referees-block textarea{
+  width:100%;margin-top:12px;font-family:'JetBrains Mono',monospace;font-size:12.5px;line-height:1.5;resize:vertical;
+  background:rgba(0,0,0,.25);border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:12px;
+}
+.referees-block #saveRefereesBtn{margin-top:10px;}
 
 /* ===== FORMATION PITCH ===== */
 .pitch{
@@ -401,6 +437,10 @@ footer.appfoot{text-align:center;color:var(--ink-dim);font-size:11.5px;margin-to
 </style>
 </head>
 <body>
+<div id="loadingOverlay">
+  <div class="loading-spinner"></div>
+  <div class="loading-text" id="loadingText">ЗАГРУЗКА...</div>
+</div>
 <div class="wrap">
 
   <div class="topbar">
@@ -513,6 +553,19 @@ footer.appfoot{text-align:center;color:var(--ink-dim);font-size:11.5px;margin-to
       <div class="bench-note" id="benchNote"></div>
       <div style="display:flex;justify-content:center;margin-top:16px;">
         <button class="btn ghost small" id="downloadDrawBtn">📥 Скачать состав (PNG)</button>
+      </div>
+
+      <div class="manual-edit admin-only" id="manualEditBox">
+        <div class="eyebrow" id="t_manualEditLabel" style="margin-top:20px;">Изменить состав команд вручную</div>
+        <div class="paste-hint" id="t_manualEditHint">Перенеси игрока в другую команду или в запас — список обновится сразу.</div>
+        <div id="manualEditWrap"></div>
+      </div>
+
+      <div class="referees-block">
+        <div class="eyebrow" id="t_refereesLabel" style="margin-top:24px;">Судьи</div>
+        <pre class="referees-display" id="refereesDisplay"></pre>
+        <textarea class="admin-only" id="refereesInput" rows="11"></textarea>
+        <button class="btn small admin-only" id="saveRefereesBtn">Сохранить</button>
       </div>
     </div>
   </div>
@@ -653,6 +706,12 @@ const TR = {
             kk:"Жеребьёвканы тек админ өткізе алады. Соңғы жеребьёвка нәтижесі барлығына төменде көрінеді."},
   benchTip:{ru:"Роли игрокам назначает админ во вкладке «Карточки игроков».",
             kk:"Ойыншыларға рөлдерді «Ойыншылар карточкалары» бөлімінде админ тағайындайды."},
+  manualEditLabel:{ru:"Изменить состав команд вручную",kk:"Команда құрамын қолмен өзгерту"},
+  manualEditHint:{ru:"Перенеси игрока в другую команду или в запас — список обновится сразу.",
+                  kk:"Ойыншыны басқа командаға немесе қосымшаға ауыстыр — тізім бірден жаңарады."},
+  benchOption:{ru:"— Запас —",kk:"— Қосымша —"},
+  refereesLabel:{ru:"Судьи",kk:"Төрешілер"},
+  refereesSave:{ru:"Сохранить",kk:"Сақтау"},
   benchTotal:{ru:(n)=>`Всего в жеребьёвке: ${n} игроков.`, kk:(n)=>`Жеребьёвкада барлығы: ${n} ойыншы.`},
   benchExtra:{ru:(s)=>` В запасе (сверх 4×6): ${s}.`, kk:(s)=>` Қосымшада (4×6-дан тыс): ${s}.`},
   benchEmpty:{ru:"Сначала выбери игроков во вкладке «Состав на среду».",kk:"Алдымен «Сәрсенбідегі құрам» бөлімінде ойыншыларды таңда."},
@@ -685,6 +744,7 @@ const TR = {
   footer:{ru:"СРЕДА · 21:30–23:30 · данные хранятся в общем хранилище артефакта и видны всем, кто открывает эту страницу",
           kk:"СӘРСЕНБІ · 21:30–23:30 · деректер артефакттің ортақ қоймасында сақталады және мұны ашқандардың бәріне көрінеді"},
   viewerMode:{ru:"👁 Режим просмотра",kk:"👁 Көру режимі"},
+  loadingText:{ru:"Загрузка...",kk:"Жүктелуде..."},
   adminMode:{ru:"🔓 Режим админа",kk:"🔓 Админ режимі"},
   loginAdmin:{ru:"🔒 Войти как админ",kk:"🔒 Админ болып кіру"},
   logoutAdmin:{ru:"Выйти из админки",kk:"Админнен шығу"},
@@ -748,6 +808,10 @@ function applyLanguage(){
   document.getElementById("t_drawHead").textContent = t("drawHead");
   document.getElementById("drawBtn").textContent = t("drawBtn");
   document.getElementById("downloadDrawBtn").textContent = t("downloadBtn");
+  document.getElementById("t_manualEditLabel").textContent = t("manualEditLabel");
+  document.getElementById("t_manualEditHint").textContent = t("manualEditHint");
+  document.getElementById("t_refereesLabel").textContent = t("refereesLabel");
+  document.getElementById("saveRefereesBtn").textContent = t("refereesSave");
   document.getElementById("drawHintReadonly").textContent = t("drawHint");
   document.getElementById("t_payHead").textContent = t("payHead");
   document.getElementById("t_paidLabel").textContent = t("paidLabel");
@@ -763,6 +827,7 @@ function applyLanguage(){
   document.getElementById("t_addCategory").textContent = t("addCategory");
   document.getElementById("newCategoryName").placeholder = t("catPh");
   document.getElementById("t_footer").textContent = t("footer");
+  document.getElementById("loadingText").textContent = t("loadingText");
   renderStatLegend();
   document.querySelectorAll(".lang-toggle .opt").forEach(el=>{
     el.classList.toggle("on", el.dataset.lang===LANG);
@@ -892,6 +957,23 @@ const DEFAULT_AWARD_CATEGORIES = [
   {id:"keeper", label:"Лучший вратарь", custom:false},
 ];
 
+const DEFAULT_REFEREES_TEXT =
+`Төрешілер:
+
+Ерлан    ✅️ Нұржігіт  🏁
+Жандос ✅️  Ерден  🏁
+Самат    ✅️  Асет 🏁.
+Нурс       ☑️   Берик  🏁
+Жігіттер!
+
+Без свистка игру не останавливаем. 
+
+Играем до аута. 
+
+И окончательное решение за судьёй. 
+
+При спорах снимаем команду  из игры.`;
+
 function pad2(n){return String(n).padStart(2,"0");}
 function getNextWednesday(){
   const now = new Date();
@@ -931,6 +1013,7 @@ let awardVotes = {};   // shared aggregate: {categoryId: {playerId:{sum,count}}}
 let myVotes = {};      // personal: {"catId:playerId": n}
 let adminMode = false;
 let lastDraw = null;
+let refereesText = DEFAULT_REFEREES_TEXT;
 
 /* ============ UTIL ============ */
 function ageFrom(birthISO){
@@ -975,39 +1058,58 @@ function tierOf(ovr){ return ovr>=80?"gold":ovr>=68?"silver":"bronze"; }
 function defaultCountry(p){ return "KZ"; }
 
 /* ============ STORAGE ============ */
+async function safeGet(key, shared){
+  try{ const r = await storageGet(key, shared); return (r && r.value!==undefined) ? r.value : null; }
+  catch(e){ return null; }
+}
 async function loadState(){
-  try{ const r = await storageGet("lang-pref", false); if(r && r.value) LANG = r.value; }catch(e){}
-  try{
-    const r = await storageGet("squad:"+DATE_KEY, true);
-    if(r && r.value){ const d=JSON.parse(r.value); squadSelected = new Set(d.selected||[]); }
-  }catch(e){}
-  try{ const r = await storageGet("countries", true); if(r && r.value) countryMap = JSON.parse(r.value); }catch(e){}
-  try{ const r = await storageGet("payments:"+DATE_KEY, true); if(r && r.value) paymentTracker = JSON.parse(r.value); }catch(e){}
-  try{ const r = await storageGet("custom-players", true); if(r && r.value) customPlayers = JSON.parse(r.value); }catch(e){}
-  try{ const r = await storageGet("draw-result:"+DATE_KEY, true); if(r && r.value) lastDraw = JSON.parse(r.value); }catch(e){}
-  try{ const r = await storageGet("roles", true); if(r && r.value) roleMap = JSON.parse(r.value); }catch(e){}
-  try{ const r = await storageGet("stat-overrides", true); if(r && r.value) statOverrides = JSON.parse(r.value); }catch(e){}
-  try{ const r = await storageGet("award-categories", true); if(r && r.value) awardCategories = JSON.parse(r.value); }catch(e){}
-  try{ const r = await storageGet("my-award-votes", false); if(r && r.value) myVotes = JSON.parse(r.value); }catch(e){}
+  const [
+    langVal, squadVal, countriesVal, paymentsVal, customVal,
+    drawVal, rolesVal, overridesVal, categoriesVal, myVotesVal, refereesVal
+  ] = await Promise.all([
+    safeGet("lang-pref", false),
+    safeGet("squad:"+DATE_KEY, true),
+    safeGet("countries", true),
+    safeGet("payments:"+DATE_KEY, true),
+    safeGet("custom-players", true),
+    safeGet("draw-result:"+DATE_KEY, true),
+    safeGet("roles", true),
+    safeGet("stat-overrides", true),
+    safeGet("award-categories", true),
+    safeGet("my-award-votes", false),
+    safeGet("referees:"+DATE_KEY, true),
+  ]);
+  if(langVal) LANG = langVal;
+  if(squadVal){ try{ const d=JSON.parse(squadVal); squadSelected = new Set(d.selected||[]); }catch(e){} }
+  if(countriesVal){ try{ countryMap = JSON.parse(countriesVal); }catch(e){} }
+  if(paymentsVal){ try{ paymentTracker = JSON.parse(paymentsVal); }catch(e){} }
+  if(customVal){ try{ customPlayers = JSON.parse(customVal); }catch(e){} }
+  if(drawVal){ try{ lastDraw = JSON.parse(drawVal); }catch(e){} }
+  if(rolesVal){ try{ roleMap = JSON.parse(rolesVal); }catch(e){} }
+  if(overridesVal){ try{ statOverrides = JSON.parse(overridesVal); }catch(e){} }
+  if(categoriesVal){ try{ awardCategories = JSON.parse(categoriesVal); }catch(e){} }
+  if(myVotesVal){ try{ myVotes = JSON.parse(myVotesVal); }catch(e){} }
+  if(refereesVal!==null) refereesText = refereesVal;
+
   allPlayers = [...PLAYERS, ...customPlayers];
   allPlayers.forEach(p=>{ if(!countryMap[p.id]) countryMap[p.id]=defaultCountry(p); });
-  try{
-    const listRes = await storageList("photo:", true);
-    if(listRes && listRes.keys){
-      for(const k of listRes.keys){
-        try{ const r = await storageGet(k, true); if(r && r.value) photoMap[k.slice(6)] = r.value; }catch(e){}
-      }
-    }
-  }catch(e){}
-  for(const cat of awardCategories){
-    try{ const r = await storageGet("awards:"+cat.id, true); if(r && r.value) awardVotes[cat.id] = JSON.parse(r.value); }catch(e){}
-  }
+
+  // photos + award votes: fetch in parallel too
+  const photoListRes = await (async()=>{ try{ return await storageList("photo:", true); }catch(e){ return null; } })();
+  const photoKeys = (photoListRes && photoListRes.keys) ? photoListRes.keys : [];
+  const [photoResults, voteResults] = await Promise.all([
+    Promise.all(photoKeys.map(k=>safeGet(k, true))),
+    Promise.all(awardCategories.map(cat=>safeGet("awards:"+cat.id, true))),
+  ]);
+  photoKeys.forEach((k,i)=>{ if(photoResults[i]) photoMap[k.slice(6)] = photoResults[i]; });
+  awardCategories.forEach((cat,i)=>{ if(voteResults[i]){ try{ awardVotes[cat.id] = JSON.parse(voteResults[i]); }catch(e){} } });
 }
 async function saveSquad(){ try{ await storageSet("squad:"+DATE_KEY, JSON.stringify({selected:[...squadSelected]}), true); }catch(e){} }
 async function saveCountries(){ try{ await storageSet("countries", JSON.stringify(countryMap), true); }catch(e){} }
 async function savePayments(){ try{ await storageSet("payments:"+DATE_KEY, JSON.stringify(paymentTracker), true); }catch(e){} }
 async function saveCustomPlayers(){ try{ await storageSet("custom-players", JSON.stringify(customPlayers), true); }catch(e){} }
 async function saveDraw(){ try{ await storageSet("draw-result:"+DATE_KEY, JSON.stringify(lastDraw), true); }catch(e){} }
+async function saveReferees(){ try{ await storageSet("referees:"+DATE_KEY, refereesText, true); }catch(e){} }
 async function savePhoto(id, dataUrl){ photoMap[id]=dataUrl; try{ await storageSet("photo:"+id, dataUrl, true); }catch(e){} }
 async function saveRoles(){ try{ await storageSet("roles", JSON.stringify(roleMap), true); }catch(e){} }
 async function saveStatOverrides(){ try{ await storageSet("stat-overrides", JSON.stringify(statOverrides), true); }catch(e){} }
@@ -1393,6 +1495,7 @@ function getEffectiveRoles(teamPlayers){
   return result;
 }
 function renderDrawResult(){
+  renderReferees();
   const grid = document.getElementById("teamsResultGrid");
   if(!lastDraw){ document.getElementById("drawResult").classList.remove("show"); return; }
   grid.innerHTML = "";
@@ -1441,8 +1544,52 @@ function renderDrawResult(){
     ? t("benchEmpty")
     : t("benchTotal", lastDraw.poolSize) + (benchNames.length? t("benchExtra", benchNames.join(", ")) : "") + " " + t("benchTip");
   document.getElementById("drawResult").classList.add("show");
+  renderManualEditor();
 }
 document.getElementById("drawBtn").addEventListener("click", runDraw);
+
+/* ============ MANUAL TEAM EDITING (after draw) ============ */
+function renderManualEditor(){
+  const wrap = document.getElementById("manualEditWrap");
+  if(!lastDraw){ wrap.innerHTML = ""; return; }
+  const allIds = [...lastDraw.teams.flatMap(tm=>tm.players), ...lastDraw.bench];
+  if(!allIds.length){ wrap.innerHTML = ""; return; }
+  const rows = allIds.map(id=>{
+    const p = allPlayers.find(x=>x.id===id);
+    if(!p) return "";
+    const currentTeam = lastDraw.teams.find(tm=>tm.players.includes(id));
+    const currentVal = currentTeam ? currentTeam.id : "BENCH";
+    const options = TEAMS.map(tm=>`<option value="${tm.id}" ${currentVal===tm.id?"selected":""}>${tm.label}</option>`).join("")
+      + `<option value="BENCH" ${currentVal==="BENCH"?"selected":""}>${t("benchOption")}</option>`;
+    return `<div class="manual-row"><span class="raw">${p.name}</span><select data-pid="${id}">${options}</select></div>`;
+  }).join("");
+  wrap.innerHTML = rows;
+  wrap.querySelectorAll("select").forEach(sel=>{
+    sel.addEventListener("change",(e)=>{
+      const pid = Number(e.target.dataset.pid);
+      const newVal = e.target.value;
+      lastDraw.teams.forEach(tm=>{ tm.players = tm.players.filter(x=>x!==pid); });
+      lastDraw.bench = lastDraw.bench.filter(x=>x!==pid);
+      if(newVal==="BENCH"){ lastDraw.bench.push(pid); }
+      else { const team = lastDraw.teams.find(tm=>tm.id===newVal); if(team) team.players.push(pid); }
+      saveDraw();
+      renderDrawResult();
+    });
+  });
+}
+
+/* ============ REFEREES BLOCK ============ */
+function renderReferees(){
+  const text = refereesText || DEFAULT_REFEREES_TEXT;
+  document.getElementById("refereesDisplay").textContent = text;
+  const input = document.getElementById("refereesInput");
+  if(document.activeElement !== input) input.value = text;
+}
+document.getElementById("saveRefereesBtn").addEventListener("click", ()=>{
+  refereesText = document.getElementById("refereesInput").value;
+  saveReferees();
+  renderReferees();
+});
 
 /* ============ DOWNLOAD DRAW AS IMAGE ============ */
 function buildExportCard(){
@@ -1592,6 +1739,8 @@ document.getElementById("addCategoryBtn").addEventListener("click", ()=>{
 
 /* ============ INIT ============ */
 (async function init(){
+  tickCountdown(); // instant, no network needed — countdown/date are always correct even while data loads
+  setInterval(tickCountdown, 30000);
   await loadState();
   awardCategories.forEach(c=>{
     const map = {mvp:"catMvp",scorer:"catScorer",assist:"catAssist",keeper:"catKeeper"};
@@ -1605,8 +1754,9 @@ document.getElementById("addCategoryBtn").addEventListener("click", ()=>{
   renderDrawResult();
   renderAwards();
   updateAdminUI();
-  tickCountdown();
-  setInterval(tickCountdown, 30000);
+  const overlay = document.getElementById("loadingOverlay");
+  overlay.classList.add("hide");
+  setTimeout(()=>{ overlay.style.display="none"; }, 400);
 })();
 </script>
 </body>
