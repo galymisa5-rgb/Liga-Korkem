@@ -254,7 +254,7 @@ input:focus,select:focus{outline:2px solid var(--turf);outline-offset:1px;}
 .tier-gold .fcard-shape{background:linear-gradient(165deg,#f6e0a3 0%,#dcb45a 40%,#8f6d2a 100%);}
 .tier-silver .fcard-shape{background:linear-gradient(165deg,#eef2f4 0%,#c3ccd2 40%,#7d8a92 100%);}
 .tier-bronze .fcard-shape{background:linear-gradient(165deg,#e8bd8d 0%,#c48a52 40%,#7c4e28 100%);}
-.fcard-content{position:relative;height:100%;display:flex;flex-direction:column;padding:6% 10% 4%;}
+.fcard-content{position:relative;height:100%;display:flex;flex-direction:column;padding:6% 10% 26%;}
 .fcard-top{display:flex;justify-content:space-between;align-items:flex-start;position:relative;z-index:2;}
 .fcard-topleft{display:flex;flex-direction:column;align-items:flex-start;}
 .ovr2{font-family:'Bebas Neue',sans-serif;line-height:.82;color:#2a1e08;font-size:clamp(24px,8.5cqw,36px);}
@@ -1122,7 +1122,7 @@ function resizeImageFile(file){
     reader.onload = (e)=>{
       const img = new Image();
       img.onload = ()=>{
-        const cw = 480, ch = 608; // higher-res portrait frame so cards stay sharp on larger screens
+        const cw = 720, ch = 912; // high enough res to stay sharp even on 3x Retina phone screens
         const canvas = document.createElement("canvas");
         canvas.width = cw; canvas.height = ch;
         const ctx = canvas.getContext("2d");
@@ -1134,7 +1134,7 @@ function resizeImageFile(file){
         const centerDy = (ch-h)/2; // negative when image overflows vertically
         const dy = centerDy * 0.32; // bias crop window toward the TOP of the photo (face), not the center
         ctx.drawImage(img, dx, dy, w, h);
-        resolve(canvas.toDataURL("image/jpeg", 0.88));
+        resolve(canvas.toDataURL("image/jpeg", 0.86));
       };
       img.onerror = reject;
       img.src = e.target.result;
