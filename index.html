@@ -26,7 +26,7 @@
   --shadow:0 20px 40px -18px rgba(0,0,0,.6);
 }
 *{box-sizing:border-box;}
-html,body{margin:0;padding:0;}
+html,body{margin:0;padding:0;max-width:100%;overflow-x:hidden;}
 body{
   background:
     radial-gradient(1200px 600px at 15% -10%, rgba(63,163,77,.18), transparent 60%),
@@ -368,12 +368,12 @@ input:focus,select:focus{outline:2px solid var(--turf);outline-offset:1px;}
 .pitch .p-box-bot{left:22%;right:22%;bottom:0;height:14%;border:1px solid rgba(255,255,255,.35);border-bottom:none;position:absolute;}
 .pdot{
   position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:3px;
-  width:64px;
+  width:78px;
 }
-.pdot .circle{width:26px;height:26px;border-radius:50%;border:2px solid rgba(255,255,255,.7);box-shadow:0 3px 6px rgba(0,0,0,.4);overflow:hidden;display:flex;align-items:center;justify-content:center;}
-.pdot .circle img{width:100%;height:100%;object-fit:cover;display:block;}
+.pdot .circle{width:40px;height:40px;border-radius:50%;border:2px solid rgba(255,255,255,.75);box-shadow:0 3px 7px rgba(0,0,0,.45);overflow:hidden;display:flex;align-items:center;justify-content:center;}
+.pdot .circle img{width:100%;height:100%;object-fit:cover;object-position:center 20%;display:block;}
 .pdot.auto .circle{border-style:dashed;opacity:.88;}
-.pdot .pname{font-size:9.5px;text-align:center;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.8);line-height:1.15;font-weight:600;}
+.pdot .pname{font-size:10.5px;text-align:center;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.85);line-height:1.15;font-weight:700;}
 .norole-list{margin-top:10px;font-size:11.5px;color:var(--ink-dim);}
 .norole-list b{color:var(--ink);}
 
@@ -1122,17 +1122,19 @@ function resizeImageFile(file){
     reader.onload = (e)=>{
       const img = new Image();
       img.onload = ()=>{
-        const cw = 300, ch = 380; // portrait frame, matches card photo area proportions
+        const cw = 480, ch = 608; // higher-res portrait frame so cards stay sharp on larger screens
         const canvas = document.createElement("canvas");
         canvas.width = cw; canvas.height = ch;
         const ctx = canvas.getContext("2d");
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = "high";
         const scale = Math.max(cw/img.width, ch/img.height);
         const w = img.width*scale, h = img.height*scale;
         const dx = (cw-w)/2;
         const centerDy = (ch-h)/2; // negative when image overflows vertically
         const dy = centerDy * 0.32; // bias crop window toward the TOP of the photo (face), not the center
         ctx.drawImage(img, dx, dy, w, h);
-        resolve(canvas.toDataURL("image/jpeg", 0.78));
+        resolve(canvas.toDataURL("image/jpeg", 0.88));
       };
       img.onerror = reject;
       img.src = e.target.result;
@@ -1594,7 +1596,7 @@ document.getElementById("saveRefereesBtn").addEventListener("click", ()=>{
 /* ============ DOWNLOAD DRAW AS IMAGE ============ */
 function buildExportCard(){
   const el = document.createElement("div");
-  el.style.cssText = "position:absolute;left:-9999px;top:0;width:900px;padding:34px;"+
+  el.style.cssText = "width:900px;padding:34px;"+
     "background:linear-gradient(155deg,#123328,#0d221c);font-family:'Inter',sans-serif;color:#f3f6f2;";
   const header = document.createElement("div");
   header.style.cssText = "text-align:center;margin-bottom:22px;";
@@ -1606,8 +1608,23 @@ function buildExportCard(){
   gridClone.style.display = "grid";
   gridClone.style.gridTemplateColumns = "repeat(2, 1fr)";
   gridClone.style.gap = "18px";
+  // strip admin-only controls (e.g. team-country selects) from the exported image
+  gridClone.querySelectorAll("select").forEach(sel=>sel.remove());
+
+  const refBlock = document.createElement("div");
+  refBlock.style.cssText = "margin-top:26px;background:#123328;border:1px solid #1e4536;border-radius:14px;padding:20px 24px;";
+  const refTitle = document.createElement("div");
+  refTitle.style.cssText = "font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#5ec96b;margin-bottom:10px;";
+  refTitle.textContent = t("refereesLabel");
+  const refText = document.createElement("div");
+  refText.style.cssText = "white-space:pre-wrap;font-family:'Inter',sans-serif;font-size:15px;line-height:1.6;color:#f3f6f2;";
+  refText.textContent = refereesText || DEFAULT_REFEREES_TEXT;
+  refBlock.appendChild(refTitle);
+  refBlock.appendChild(refText);
+
   el.appendChild(header);
   el.appendChild(gridClone);
+  el.appendChild(refBlock);
   return el;
 }
 async function downloadDrawImage(){
@@ -1616,10 +1633,15 @@ async function downloadDrawImage(){
   const original = btn.textContent;
   btn.textContent = t("downloadPreparing");
   btn.disabled = true;
-  let exportEl = null;
+  let isolationWrap = null;
   try{
-    exportEl = buildExportCard();
-    document.body.appendChild(exportEl);
+    const exportEl = buildExportCard();
+    // fully isolate the (wide, off-viewport-sized) export markup so it can never
+    // affect page scroll width / layout on mobile, even if something goes wrong below
+    isolationWrap = document.createElement("div");
+    isolationWrap.style.cssText = "position:fixed;top:0;left:0;width:0;height:0;overflow:hidden;opacity:0;pointer-events:none;";
+    isolationWrap.appendChild(exportEl);
+    document.body.appendChild(isolationWrap);
     const canvas = await html2canvas(exportEl, {backgroundColor:"#0d221c", scale:2, useCORS:true});
     const link = document.createElement("a");
     link.download = `liga-korkem-${DATE_KEY}.png`;
@@ -1628,10 +1650,11 @@ async function downloadDrawImage(){
   }catch(err){
     console.error("Export error:", err);
     alert(t("downloadFail"));
+  } finally {
+    if(isolationWrap && isolationWrap.parentNode) isolationWrap.parentNode.removeChild(isolationWrap);
+    btn.textContent = original;
+    btn.disabled = false;
   }
-  if(exportEl && exportEl.parentNode) exportEl.parentNode.removeChild(exportEl);
-  btn.textContent = original;
-  btn.disabled = false;
 }
 document.getElementById("downloadDrawBtn").addEventListener("click", downloadDrawImage);
 
