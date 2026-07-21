@@ -141,6 +141,31 @@ body:not(.admin-mode) .admin-only{display:none !important;}
   box-shadow:0 8px 26px rgba(0,0,0,.55), 0 0 0 3px rgba(232,196,104,.35);
   display:block;margin:0 auto;
 }
+
+/* ===== BIRTHDAY SPOTLIGHT ===== */
+.bday-block{margin:8px 0 6px;}
+.bday-featured{
+  display:flex;align-items:center;gap:16px;
+  background:linear-gradient(100deg, rgba(232,196,104,.14), rgba(232,196,104,.03));
+  border:1px solid var(--gold-dim);border-radius:16px;padding:14px 18px;margin-top:10px;
+}
+.bday-photo{
+  width:58px;height:58px;border-radius:50%;flex:none;overflow:hidden;
+  background:radial-gradient(circle at 50% 35%, rgba(255,255,255,.12), transparent 60%), var(--pitch-2);
+  border:2px solid var(--gold-dim);
+  display:flex;align-items:center;justify-content:center;font-size:26px;
+}
+.bday-photo img{width:100%;height:100%;object-fit:cover;object-position:center 20%;}
+.bday-name{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--ink);letter-spacing:.02em;}
+.bday-sub{font-size:12.5px;color:var(--ink-dim);margin-top:2px;}
+.bday-sub b{color:var(--gold);}
+.bday-list{margin-top:10px;}
+.bday-row{
+  display:flex;justify-content:space-between;gap:10px;padding:8px 4px;
+  border-top:1px solid rgba(255,255,255,.06);font-size:13px;
+}
+.bday-row:first-child{border-top:none;}
+.bday-row .bday-date{color:var(--ink-dim);font-family:'JetBrains Mono',monospace;font-size:11.5px;white-space:nowrap;}
 .league-name em{font-style:normal;color:var(--gold);}
 .league-name small{display:block;font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.3em;color:var(--ink-dim);text-transform:uppercase;margin-top:4px;white-space:normal;}
 
@@ -275,6 +300,12 @@ input:focus,select:focus{outline:2px solid var(--turf);outline-offset:1px;}
 .paid-pill{width:8px;height:8px;border-radius:50%;margin-top:4px;}
 .paid-pill.yes{background:#2f7d3d;box-shadow:0 0 0 3px rgba(47,125,61,.25);}
 .paid-pill.no{background:#a13327;box-shadow:0 0 0 3px rgba(161,51,39,.25);}
+.fcard-topright{display:flex;flex-direction:column;align-items:flex-end;gap:6px;}
+.age-badge{
+  font-family:'Bebas Neue',sans-serif;font-size:clamp(13px,4.2cqw,18px);color:#2a1e08;
+  background:rgba(255,255,255,.4);border:1px solid rgba(42,30,8,.4);border-radius:8px;
+  padding:1px 8px;line-height:1.3;
+}
 .fcard-photo-wrap{
   position:absolute;left:8%;right:8%;top:13%;bottom:36%;
   display:flex;align-items:center;justify-content:center;overflow:hidden;z-index:1;
@@ -490,6 +521,12 @@ footer.appfoot{text-align:center;color:var(--ink-dim);font-size:11.5px;margin-to
       <small id="t_leagueTag">аматорлық футбол лигасы · среда</small>
     </h2>
     <div class="league-line"></div>
+  </div>
+
+  <div class="bday-block" id="bdayBlock">
+    <div class="eyebrow" id="t_bdayHeading">Ближайшие дни рождения</div>
+    <div class="bday-featured" id="bdayFeatured"></div>
+    <div class="bday-list" id="bdayList"></div>
   </div>
 
   <div class="tabbar">
@@ -750,6 +787,11 @@ const TR = {
           kk:"СӘРСЕНБІ · 21:30–23:30 · деректер артефакттің ортақ қоймасында сақталады және мұны ашқандардың бәріне көрінеді"},
   viewerMode:{ru:"👁 Режим просмотра",kk:"👁 Көру режимі"},
   loadingText:{ru:"Загрузка...",kk:"Жүктелуде..."},
+  bdayHeading:{ru:"Ближайшие дни рождения",kk:"Жақын арадағы туған күндер"},
+  bdayTurns:{ru:(age)=>`исполнится ${age}`, kk:(age)=>`${age} жасқа толады`},
+  bdayToday:{ru:"Сегодня! 🎉",kk:"Бүгін! 🎉"},
+  bdayInDays:{ru:(n)=>`через ${n} дн.`, kk:(n)=>`${n} күннен кейін`},
+  bdayNone:{ru:"Дни рождения пока не заполнены",kk:"Туған күндер әлі толтырылмаған"},
   adminMode:{ru:"🔓 Режим админа",kk:"🔓 Админ режимі"},
   loginAdmin:{ru:"🔒 Войти как админ",kk:"🔒 Админ болып кіру"},
   logoutAdmin:{ru:"Выйти из админки",kk:"Админнен шығу"},
@@ -833,7 +875,9 @@ function applyLanguage(){
   document.getElementById("newCategoryName").placeholder = t("catPh");
   document.getElementById("t_footer").textContent = t("footer");
   document.getElementById("loadingText").textContent = t("loadingText");
+  document.getElementById("t_bdayHeading").textContent = t("bdayHeading");
   renderStatLegend();
+  renderBirthdays();
   document.querySelectorAll(".lang-toggle .opt").forEach(el=>{
     el.classList.toggle("on", el.dataset.lang===LANG);
   });
@@ -954,6 +998,39 @@ function renderStatLegend(){
   const keys = ["PAC","SHO","PAS","DRI","DEF","PHY","DIV","HAN","KIC","REF","SPD","POS"];
   el.innerHTML = keys.map(k=>`<span class="sl-chip"><b>${k}</b>${statInfo(k)}</span>`).join("");
 }
+function formatShortDate(d){
+  return `${String(d.getDate()).padStart(2,"0")}.${String(d.getMonth()+1).padStart(2,"0")}`;
+}
+function renderBirthdays(){
+  const block = document.getElementById("bdayBlock");
+  const withBirth = allPlayers
+    .filter(p=>p.birth)
+    .map(p=>({p, info:nextBirthdayInfo(p.birth)}))
+    .sort((a,b)=>a.info.days-b.info.days);
+  if(!withBirth.length){
+    document.getElementById("bdayFeatured").innerHTML = `<div class="bday-sub">${t("bdayNone")}</div>`;
+    document.getElementById("bdayList").innerHTML = "";
+    return;
+  }
+  const featured = withBirth[0];
+  const rest = withBirth.slice(1, 5);
+  const photo = photoMap[featured.p.id];
+  const flag = (COUNTRIES.find(c=>c.code===countryMap[featured.p.id])||{}).flag || "🎂";
+  const subText = featured.info.days===0
+    ? t("bdayToday")
+    : `${t("bdayTurns", featured.info.turningAge)} · ${formatShortDate(featured.info.date)} · ${t("bdayInDays", featured.info.days)}`;
+  document.getElementById("bdayFeatured").innerHTML = `
+    <div class="bday-photo">${photo?`<img src="${photo}" alt="${featured.p.name}">`:`<span>${flag}</span>`}</div>
+    <div>
+      <div class="bday-name">${featured.p.name}</div>
+      <div class="bday-sub">${subText}</div>
+    </div>
+  `;
+  document.getElementById("bdayList").innerHTML = rest.map(r=>{
+    const txt = r.info.days===0 ? t("bdayToday") : `${formatShortDate(r.info.date)} · ${t("bdayInDays", r.info.days)}`;
+    return `<div class="bday-row"><span>${r.p.name}</span><span class="bday-date">${txt}</span></div>`;
+  }).join("");
+}
 
 const DEFAULT_AWARD_CATEGORIES = [
   {id:"mvp",    label:"Лучший игрок сегодня", custom:false},
@@ -1029,6 +1106,16 @@ function ageFrom(birthISO){
   const m = now.getMonth()-b.getMonth();
   if(m<0 || (m===0 && now.getDate()<b.getDate())) age--;
   return age;
+}
+function nextBirthdayInfo(birthISO){
+  if(!birthISO) return null;
+  const b = new Date(birthISO+"T00:00:00");
+  const now = new Date(); now.setHours(0,0,0,0);
+  let next = new Date(now.getFullYear(), b.getMonth(), b.getDate());
+  if(next < now) next = new Date(now.getFullYear()+1, b.getMonth(), b.getDate());
+  const days = Math.round((next-now)/(1000*60*60*24));
+  const turningAge = next.getFullYear() - b.getFullYear();
+  return {days, date:next, turningAge};
 }
 function hashStr(s){let h=0;for(let i=0;i<s.length;i++){h=Math.imul(31,h)+s.charCodeAt(i)|0;}return h>>>0;}
 function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
@@ -1362,6 +1449,7 @@ function renderCards(){
   list.forEach(p=>{
     const {stats, ovr} = generateStats(p);
     const tier = tierOf(ovr);
+    const age = ageFrom(p.birth);
     const country = COUNTRIES.find(c=>c.code===countryMap[p.id]) || COUNTRIES[0];
     const statKeys = Object.keys(stats);
     const leftKeys = statKeys.slice(0,3), rightKeys = statKeys.slice(3,6);
@@ -1383,7 +1471,10 @@ function renderCards(){
             <div class="flagbadge">${country.flag}</div>
             <div class="clubbadge">KFF</div>
           </div>
-          <span class="paid-pill ${p.paidJuly?'yes':'no'}" title="${p.paidJuly?'':''}"></span>
+          <div class="fcard-topright">
+            <span class="paid-pill ${p.paidJuly?'yes':'no'}" title="${p.paidJuly?'':''}"></span>
+            ${age!==null?`<div class="age-badge">${age}</div>`:""}
+          </div>
         </div>
         <div class="fcard-photo-wrap">
           ${photo?`<img class="fcard-photo-img" src="${photo}" alt="${p.name}">`:'<div class="fcard-photo-placeholder">🧍</div>'}
