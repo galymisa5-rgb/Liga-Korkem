@@ -287,7 +287,12 @@ input:focus,select:focus{outline:2px solid var(--turf);outline-offset:1px;}
 .fcard-content{position:relative;height:100%;display:flex;flex-direction:column;padding:6% 10% 19%;}
 .fcard-top{display:flex;justify-content:space-between;align-items:flex-start;position:relative;z-index:2;}
 .fcard-topleft{display:flex;flex-direction:column;align-items:flex-start;}
-.ovr2{font-family:'Bebas Neue',sans-serif;line-height:.82;color:#2a1e08;font-size:clamp(24px,8.5cqw,36px);}
+.ovr2{font-family:'Bebas Neue',sans-serif;line-height:.82;color:#2a1e08;font-size:clamp(24px,8.5cqw,36px);position:relative;display:inline-block;}
+.ovr-bonus{
+  position:absolute;top:-4px;left:100%;margin-left:3px;
+  font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;color:#2f7d3d;
+  background:rgba(47,125,61,.18);border-radius:6px;padding:1px 4px;white-space:nowrap;
+}
 .postag{font-family:'Bebas Neue',sans-serif;font-size:clamp(11px,3.2cqw,15px);color:#2a1e08;letter-spacing:.03em;
   border-bottom:2px solid rgba(42,30,8,.55);padding-bottom:4px;margin-bottom:6px;}
 .flagbadge{font-size:clamp(15px,4.5cqw,20px);line-height:1;}
@@ -415,6 +420,10 @@ input:focus,select:focus{outline:2px solid var(--turf);outline-offset:1px;}
 
 /* ===== PAYMENTS TAB ===== */
 .pay-summary{display:flex;gap:14px;margin-bottom:18px;flex-wrap:wrap;}
+.due-date-editor{
+  display:flex;gap:10px;align-items:center;flex-wrap:wrap;
+  background:rgba(255,255,255,.03);border:1px dashed var(--line);border-radius:14px;padding:14px 18px;margin-bottom:20px;
+}
 .pay-stat{background:var(--pitch-2);border:1px solid var(--line);border-radius:14px;padding:14px 20px;min-width:140px;}
 .pay-stat .n{font-family:'Bebas Neue',sans-serif;font-size:30px;color:var(--turf-bright);}
 .pay-stat.owe .n{color:var(--danger);}
@@ -620,6 +629,11 @@ footer.appfoot{text-align:center;color:var(--ink-dim);font-size:11.5px;margin-to
       <div class="pay-stat owe"><div class="n" id="payOweCount">0</div><div class="l" id="t_oweLabel">должны</div></div>
       <div class="pay-stat"><div class="n" id="dueShortEl">22.07</div><div class="l" id="t_dueLabel">срок оплаты</div></div>
     </div>
+    <div class="due-date-editor admin-only" id="dueDateEditor">
+      <span class="eyebrow" id="t_dueDateEditLabel">Дата следующего сбора (не каждую среду, а раз в месяц)</span>
+      <input type="date" id="dueDateInput">
+      <button class="btn small" id="saveDueDateBtn">Сохранить</button>
+    </div>
     <h3 style="font-size:18px;margin-bottom:6px;" id="t_payHistoryHead">Оплатившие за июль (история)</h3>
     <div class="history-note" id="t_payHistoryNote">Список тех, кто уже закрыл июль. Ниже — трекер на новый сбор к 22.07.2026, отмечай по факту оплаты.</div>
     <table class="pay-table">
@@ -763,6 +777,8 @@ const TR = {
   paidLabel:{ru:"оплатили",kk:"төледі"},
   oweLabel:{ru:"должны",kk:"борышты"},
   dueLabel:{ru:"срок оплаты",kk:"төлем мерзімі"},
+  dueDateEditLabel:{ru:"Дата следующего сбора (не каждую среду, а раз в месяц)",kk:"Келесі жинау күні (сәрсенбі сайын емес, айына бір рет)"},
+  dueDateSave:{ru:"Сохранить",kk:"Сақтау"},
   payHistoryHead:{ru:"Оплатившие за июль (история)",kk:"Шілдені төлегендер (тарих)"},
   payHistoryNote:{ru:(d)=>`Список тех, кто уже закрыл июль. Ниже — трекер на новый сбор к ${d}, отмечай по факту оплаты.`,
                   kk:(d)=>`Шілдені жапқандар тізімі. Төменде — ${d} жаңа жинауға арналған трекер, төлеген сайын белгіле.`},
@@ -822,9 +838,9 @@ function applyLanguage(){
   document.getElementById("t_eyebrow").textContent = t("eyebrow");
   document.getElementById("t_title").innerHTML = t("title");
   document.getElementById("t_sub").textContent = t("sub");
-  document.getElementById("t_reminder").innerHTML = t("reminder", longDate(LANG));
+  document.getElementById("t_reminder").innerHTML = t("reminder", longDate(LANG, paymentDueObj()));
   document.getElementById("dateValueEl").textContent = DATE_STR;
-  document.getElementById("dueShortEl").textContent = DATE_SHORT;
+  document.getElementById("dueShortEl").textContent = paymentDueShort();
   document.getElementById("t_untilGame").textContent = t("untilGame");
   document.getElementById("t_days").textContent = t("days");
   document.getElementById("t_hours").textContent = t("hours");
@@ -864,11 +880,13 @@ function applyLanguage(){
   document.getElementById("t_paidLabel").textContent = t("paidLabel");
   document.getElementById("t_oweLabel").textContent = t("oweLabel");
   document.getElementById("t_dueLabel").textContent = t("dueLabel");
+  document.getElementById("t_dueDateEditLabel").textContent = t("dueDateEditLabel");
+  document.getElementById("saveDueDateBtn").textContent = t("dueDateSave");
   document.getElementById("t_payHistoryHead").textContent = t("payHistoryHead");
-  document.getElementById("t_payHistoryNote").textContent = t("payHistoryNote", DATE_STR);
+  document.getElementById("t_payHistoryNote").textContent = t("payHistoryNote", paymentDueStr());
   document.getElementById("t_thPlayer").textContent = t("thPlayer");
   document.getElementById("t_thAge").textContent = t("thAge");
-  document.getElementById("t_thCollect").textContent = t("thCollect", DATE_SHORT);
+  document.getElementById("t_thCollect").textContent = t("thCollect", paymentDueShort());
   document.getElementById("t_awardsHead").textContent = t("awardsHead");
   document.getElementById("t_awardsNote").textContent = t("awardsNote");
   document.getElementById("t_addCategory").textContent = t("addCategory");
@@ -1076,11 +1094,13 @@ const DATE_SHORT = `${pad2(NEXT_MATCH.getDate())}.${pad2(NEXT_MATCH.getMonth()+1
 const DATE_KEY = `${NEXT_MATCH.getFullYear()}-${pad2(NEXT_MATCH.getMonth()+1)}-${pad2(NEXT_MATCH.getDate())}`;
 const MONTHS_RU = ["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
 const MONTHS_KK = ["қаңтар","ақпан","наурыз","сәуір","мамыр","маусым","шілде","тамыз","қыркүйек","қазан","қараша","желтоқсан"];
-function longDate(lang){
-  const d = NEXT_MATCH.getDate(), m = NEXT_MATCH.getMonth(), y = NEXT_MATCH.getFullYear();
+function longDate(lang, date){
+  const dt = date || NEXT_MATCH;
+  const d = dt.getDate(), m = dt.getMonth(), y = dt.getFullYear();
   return lang==="kk" ? `${d} ${MONTHS_KK[m]} ${y} ж.` : `${d} ${MONTHS_RU[m]} ${y}`;
 }
 const ADMIN_PIN = "0722"; // поменяй этот код в файле, если хочешь свой пароль администратора
+const DEFAULT_PAYMENT_DUE = "2026-08-12"; // сбор не каждую среду, а раз в месяц — эту дату меняет админ
 
 let customPlayers = [];
 let allPlayers = [...PLAYERS];
@@ -1096,6 +1116,17 @@ let myVotes = {};      // personal: {"catId:playerId": n}
 let adminMode = false;
 let lastDraw = null;
 let refereesText = DEFAULT_REFEREES_TEXT;
+let paymentDueDate = DEFAULT_PAYMENT_DUE; // ISO yyyy-mm-dd, independent of the weekly game date
+
+function paymentDueObj(){ return new Date(paymentDueDate+"T00:00:00"); }
+function paymentDueStr(){
+  const d = paymentDueObj();
+  return `${pad2(d.getDate())}.${pad2(d.getMonth()+1)}.${d.getFullYear()}`;
+}
+function paymentDueShort(){
+  const d = paymentDueObj();
+  return `${pad2(d.getDate())}.${pad2(d.getMonth()+1)}`;
+}
 
 /* ============ UTIL ============ */
 function ageFrom(birthISO){
@@ -1122,6 +1153,14 @@ function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a
 function rand(rng,min,max){return Math.floor(min+rng()*(max-min+1));}
 function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
 
+function awardBonus(playerId){
+  let total = 0;
+  awardCategories.forEach(cat=>{
+    const v = (awardVotes[cat.id]||{})[playerId];
+    if(v && v.count){ total += v.sum / v.count; } // each category contributes 0-5 "stars" on average
+  });
+  return Math.round(Math.min(total, 12)); // cap the total boost so it can't be absurd
+}
 function generateStats(p){
   const rng = mulberry32(hashStr(p.name+p.id));
   const age = ageFrom(p.birth) ?? 30;
@@ -1143,8 +1182,10 @@ function generateStats(p){
   const ov = statOverrides[p.id];
   if(ov){ Object.keys(ov).forEach(k=>{ if(base[k]!==undefined && ov[k]!==undefined && ov[k]!==null && ov[k]!=="") base[k]=Math.round(clamp(Number(ov[k]),30,99)); }); }
   const vals = Object.values(base);
-  const ovr = Math.round(vals.reduce((a,b)=>a+b,0)/vals.length);
-  return {stats:base, ovr};
+  const rawOvr = Math.round(vals.reduce((a,b)=>a+b,0)/vals.length);
+  const bonus = awardBonus(p.id);
+  const ovr = Math.round(clamp(rawOvr + bonus, 30, 99));
+  return {stats:base, ovr, bonus};
 }
 function tierOf(ovr){ return ovr>=80?"gold":ovr>=68?"silver":"bronze"; }
 function defaultCountry(p){ return "KZ"; }
@@ -1155,6 +1196,9 @@ async function safeGet(key, shared){
   catch(e){ return null; }
 }
 async function loadState(){
+  const dueDateVal = await safeGet("payment-due-date", true);
+  if(dueDateVal) paymentDueDate = dueDateVal;
+
   const [
     langVal, squadVal, countriesVal, paymentsVal, customVal,
     drawVal, rolesVal, overridesVal, categoriesVal, myVotesVal, refereesVal
@@ -1162,7 +1206,7 @@ async function loadState(){
     safeGet("lang-pref", false),
     safeGet("squad:"+DATE_KEY, true),
     safeGet("countries", true),
-    safeGet("payments:"+DATE_KEY, true),
+    safeGet("payments:"+paymentDueDate, true),
     safeGet("custom-players", true),
     safeGet("draw-result:"+DATE_KEY, true),
     safeGet("roles", true),
@@ -1198,7 +1242,8 @@ async function loadState(){
 }
 async function saveSquad(){ try{ await storageSet("squad:"+DATE_KEY, JSON.stringify({selected:[...squadSelected]}), true); }catch(e){} }
 async function saveCountries(){ try{ await storageSet("countries", JSON.stringify(countryMap), true); }catch(e){} }
-async function savePayments(){ try{ await storageSet("payments:"+DATE_KEY, JSON.stringify(paymentTracker), true); }catch(e){} }
+async function savePayments(){ try{ await storageSet("payments:"+paymentDueDate, JSON.stringify(paymentTracker), true); }catch(e){} }
+async function savePaymentDueDate(){ try{ await storageSet("payment-due-date", paymentDueDate, true); }catch(e){} }
 async function saveCustomPlayers(){ try{ await storageSet("custom-players", JSON.stringify(customPlayers), true); }catch(e){} }
 async function saveDraw(){ try{ await storageSet("draw-result:"+DATE_KEY, JSON.stringify(lastDraw), true); }catch(e){} }
 async function saveReferees(){ try{ await storageSet("referees:"+DATE_KEY, refereesText, true); }catch(e){} }
@@ -1447,7 +1492,7 @@ function renderCards(){
   if(onlySquad) list = list.filter(p=>squadSelected.has(p.id));
   list.sort((a,b)=>generateStats(b).ovr-generateStats(a).ovr);
   list.forEach(p=>{
-    const {stats, ovr} = generateStats(p);
+    const {stats, ovr, bonus} = generateStats(p);
     const tier = tierOf(ovr);
     const age = ageFrom(p.birth);
     const country = COUNTRIES.find(c=>c.code===countryMap[p.id]) || COUNTRIES[0];
@@ -1466,7 +1511,7 @@ function renderCards(){
       <div class="fcard-content">
         <div class="fcard-top">
           <div class="fcard-topleft">
-            <div class="ovr2">${ovr}</div>
+            <div class="ovr2">${ovr}${bonus>0?`<span class="ovr-bonus" title="${LANG==='kk'?'Бағалардан бонус':'Бонус от оценок'}">+${bonus}</span>`:""}</div>
             <div class="postag">${posShort(p)}</div>
             <div class="flagbadge">${country.flag}</div>
             <div class="clubbadge">KFF</div>
@@ -1756,6 +1801,8 @@ document.getElementById("downloadDrawBtn").addEventListener("click", downloadDra
 
 /* ============ PAYMENTS TAB ============ */
 function renderPayments(){
+  const dueInput = document.getElementById("dueDateInput");
+  if(document.activeElement !== dueInput) dueInput.value = paymentDueDate;
   const body = document.getElementById("payTableBody");
   body.innerHTML="";
   let paidCount=0, oweCount=0;
@@ -1782,6 +1829,16 @@ function renderPayments(){
     });
   }
 }
+document.getElementById("saveDueDateBtn").addEventListener("click", ()=>{
+  const val = document.getElementById("dueDateInput").value;
+  if(!val) return;
+  paymentDueDate = val;
+  paymentTracker = {}; // fresh tracker for the new collection period
+  savePaymentDueDate();
+  savePayments();
+  applyLanguage(); // refreshes reminder banner / labels that show the due date
+  renderPayments();
+});
 
 /* ============ AWARDS TAB ============ */
 function renderAwards(){
@@ -1845,6 +1902,7 @@ function castVote(catId, playerId, n){
   }
   saveAwardVotes(catId); saveMyVotes();
   renderAwards();
+  renderCards();
 }
 document.getElementById("addCategoryBtn").addEventListener("click", ()=>{
   const name = document.getElementById("newCategoryName").value.trim();
