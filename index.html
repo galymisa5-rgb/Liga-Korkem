@@ -793,8 +793,8 @@ async function storageList(prefix, shared=true){
 const TR = {
   eyebrow:{ru:"Регулярный матч · среда",kk:"Тұрақты матч · сәрсенбі"},
   title:{ru:"СРЕДА<br><em>21:30 — 23:30</em>",kk:"СӘРСЕНБІ<br><em>21:30 — 23:30</em>"},
-  sub:{ru:"Еженедельная игра нашей команды. Смотри карточки игроков, веди матч в реальном времени и следи за оплатой и финансами прямо здесь.",
-       kk:"Біздің команданың апта сайынғы ойыны. Ойыншылар карточкаларын қара, матчты нақты уақытта жүргіз, төлем мен қаржыны осы жерде қадағала."},
+  sub:{ru:"Еженедельная игра нашей команды. Смотри карточки игроков, веди матч в реальном времени и следи за оплатой прямо здесь.",
+       kk:"Біздің команданың апта сайынғы ойыны. Ойыншылар карточкаларын қара, матчты нақты уақытта жүргіз, төлемді осы жерде қадағала."},
   reminder:{ru:(d)=>`Следующий сбор денег — <b>${d}</b>. Ближайшая игра в эту же дату.`,
             kk:(d)=>`Келесі ақша жинау — <b>${d}</b>. Жақын ойын да сол күні.`},
   untilGame:{ru:"До игры осталось",kk:"Ойынға дейін қалды"},
@@ -1207,6 +1207,8 @@ function longDate(lang, date){
   const d = dt.getDate(), m = dt.getMonth(), y = dt.getFullYear();
   return lang==="kk" ? `${d} ${MONTHS_KK[m]} ${y} ж.` : `${d} ${MONTHS_RU[m]} ${y}`;
 }
+// Включить раздел обратно: поставь true (данные не удаляются, только скрыты)
+const FEATURES = { awards:false, finance:false };
 const ADMIN_PIN = "0722"; // поменяй этот код в файле, если хочешь свой пароль администратора
 const REFEREE_PIN = "1111"; // отдельный, более простой код для судьи — тоже можно поменять
 const DEFAULT_PAYMENT_DUE = "2026-08-12"; // сбор не каждую среду, а раз в месяц — эту дату меняет админ
@@ -1264,6 +1266,7 @@ function rand(rng,min,max){return Math.floor(min+rng()*(max-min+1));}
 function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
 
 function awardBonus(playerId){
+  if(!FEATURES.awards) return 0;
   let total = 0;
   awardCategories.forEach(cat=>{
     const v = (awardVotes[cat.id]||{})[playerId];
@@ -2206,6 +2209,10 @@ document.getElementById("addCategoryBtn").addEventListener("click", ()=>{
   renderFinance();
   renderAwards();
   updateAdminUI();
+  Object.keys(FEATURES).forEach(k=>{
+    const btn = document.querySelector('.tabbtn[data-tab="'+k+'"]');
+    if(btn) btn.style.display = FEATURES[k] ? "" : "none";
+  });
   setInterval(tickMatch, 1000);
   setInterval(pollMatchState, 8000);
   const overlay = document.getElementById("loadingOverlay");
