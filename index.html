@@ -81,6 +81,23 @@ body.admin-mode .viewer-badge{color:var(--gold);border-color:var(--gold-dim);}
   background:rgba(255,255,255,.06);color:var(--ink-dim);display:inline-block;
 }
 body:not(.admin-mode) .admin-only{display:none !important;}
+body:not(.admin-mode):not(.referee-mode) .match-control{display:none !important;}
+
+/* ===== REFEREE FULLSCREEN ===== */
+.referee-fullscreen{
+  position:fixed;inset:0;z-index:3000;background:var(--pitch-0);
+  overflow-y:auto;padding:18px 16px 40px;
+}
+.ref-fs-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;}
+.ref-fs-badge{
+  font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.08em;color:var(--turf-bright);
+  border:1px solid var(--turf);border-radius:20px;padding:6px 14px;
+}
+body.referee-mode #matchContentMount .match-timer{font-size:clamp(56px,18vw,96px);}
+body.referee-mode #matchContentMount .match-team-btn{font-size:18px;padding:16px 22px;}
+body.referee-mode #matchContentMount .match-score{font-size:44px;min-width:110px;}
+body.referee-mode #matchContentMount .match-live{padding:30px 18px;}
+body.referee-mode #matchContentMount .match-setup{max-width:480px;margin:0 auto;}
 
 /* ===== HERO / MATCH TICKET ===== */
 .hero{padding:22px 0 18px;}
@@ -328,6 +345,32 @@ input:focus,select:focus{outline:2px solid var(--turf);outline-offset:1px;}
 .fcard-admin .photo-btn input{display:none;}
 
 /* ===== MATCH TAB ===== */
+.teams-paste-block{
+  background:rgba(255,255,255,.03);border:1px dashed var(--line);border-radius:14px;
+  padding:16px 18px;margin-bottom:18px;
+}
+.teams-paste-block textarea{
+  width:100%;margin-top:10px;font-family:'JetBrains Mono',monospace;font-size:12.5px;resize:vertical;
+  background:rgba(0,0,0,.25);border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:10px 12px;
+}
+.teams-paste-block #parseTeamsBtn{margin-top:10px;}
+.tp-team-block{margin-top:16px;background:rgba(255,255,255,.03);border-radius:12px;padding:12px 14px;}
+.tp-team-head{display:flex;align-items:center;gap:8px;font-family:'Bebas Neue',sans-serif;font-size:17px;margin-bottom:8px;}
+.tp-team-head .tp-color{width:16px;height:16px;border-radius:4px;flex:none;}
+.tp-player-row{display:flex;align-items:center;gap:8px;padding:5px 0;flex-wrap:wrap;}
+.tp-player-row .raw{flex:0 0 150px;font-size:12.5px;color:var(--ink-dim);}
+.tp-player-row select{flex:1;min-width:140px;}
+.tp-tag{font-size:9px;font-family:'JetBrains Mono',monospace;border-radius:6px;padding:1px 6px;flex:none;}
+.tp-tag.res{color:var(--bronze);border:1px solid var(--bronze);}
+.tp-tag.cap{color:var(--gold);border:1px solid var(--gold-dim);}
+.teams-list-block{margin-bottom:18px;}
+.teams-list-wrap-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-top:10px;}
+.tl-card{background:var(--pitch-2);border:1px solid var(--line);border-radius:12px;padding:12px 14px;}
+.tl-head{display:flex;align-items:center;gap:8px;font-family:'Bebas Neue',sans-serif;font-size:16px;}
+.tl-head .tl-color{width:14px;height:14px;border-radius:4px;flex:none;}
+.tl-roster{margin-top:8px;font-size:12px;color:var(--ink-dim);line-height:1.6;}
+.tl-roster b{color:var(--ink);font-weight:600;}
+.tl-del{margin-top:8px;font-size:11px;color:var(--danger);cursor:pointer;font-family:'JetBrains Mono',monospace;}
 .match-setup{background:rgba(255,255,255,.03);border:1px dashed var(--line);border-radius:14px;padding:16px 18px;display:flex;flex-direction:column;gap:12px;}
 .match-setup-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
 .match-setup-row input[type=text]{flex:1;min-width:140px;}
@@ -371,6 +414,17 @@ input:focus,select:focus{outline:2px solid var(--turf);outline-offset:1px;}
 .match-history-head{display:flex;justify-content:space-between;align-items:center;font-family:'Bebas Neue',sans-serif;font-size:17px;}
 .match-history-head .mh-date{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--ink-dim);}
 .match-history-goals{margin-top:6px;font-size:12px;color:var(--ink-dim);}
+.goal-ctl{margin-left:8px;cursor:pointer;font-size:13px;color:var(--ink-dim);padding:0 4px;}
+.goal-ctl:hover{color:var(--turf-bright);}
+.goal-ctl[data-action="del"]:hover{color:var(--danger);}
+.mh-btn{
+  cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--ink-dim);
+  border:1px solid var(--line);border-radius:8px;padding:2px 8px;margin-left:6px;white-space:nowrap;
+}
+.mh-btn:hover{color:var(--turf-bright);border-color:var(--turf);}
+.mh-btn.danger{color:var(--danger);border-color:rgba(224,101,79,.5);}
+.mh-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
+.mh-actions .mh-btn{margin-left:0;}
 
 /* ===== FINANCE TAB ===== */
 .finance-balance{
@@ -464,6 +518,15 @@ footer.appfoot{text-align:center;color:var(--ink-dim);font-size:11.5px;margin-to
   <div class="loading-spinner"></div>
   <div class="loading-text" id="loadingText">ЗАГРУЗКА...</div>
 </div>
+
+<div class="referee-fullscreen" id="refereeFullscreen" style="display:none;">
+  <div class="ref-fs-header">
+    <span class="ref-fs-badge" id="t_refBadge">🟢 Судья</span>
+    <button class="btn ghost small" id="exitRefereeBtn">✕ <span id="t_exitRef">Выйти</span></button>
+  </div>
+  <div id="matchContentMount"></div>
+</div>
+
 <div class="wrap">
 
   <div class="topbar">
@@ -473,6 +536,7 @@ footer.appfoot{text-align:center;color:var(--ink-dim);font-size:11.5px;margin-to
       <span class="opt" data-lang="ru">РУС</span>
       <span class="opt" data-lang="kk">ҚАЗ</span>
     </div>
+    <button class="btn ghost small" id="refereeToggleBtn">🟢 <span id="t_refLogin">Судья</span></button>
     <button class="btn ghost small" id="adminToggleBtn">🔒 Войти как админ</button>
   </div>
 
@@ -550,53 +614,70 @@ footer.appfoot{text-align:center;color:var(--ink-dim);font-size:11.5px;margin-to
   <div class="panel" id="panel-match">
     <div class="section-head"><h2 id="t_matchHead">Матч</h2></div>
 
-    <div class="match-setup admin-only" id="matchSetupBox">
-      <div class="eyebrow" id="t_matchSetupLabel">Новый матч</div>
-      <div class="match-setup-row">
-        <input type="text" id="teamAName" placeholder="Команда A">
-        <div class="swatches-inline" data-team="A" id="swatchesA"></div>
-      </div>
-      <div class="match-setup-row">
-        <input type="text" id="teamBName" placeholder="Команда Б">
-        <div class="swatches-inline" data-team="B" id="swatchesB"></div>
-      </div>
-      <div class="match-setup-row">
-        <label class="eyebrow" style="flex:none;" id="t_durationLabel">Тайм, минут</label>
-        <input type="number" id="matchDuration" min="1" max="60" value="5" style="width:80px;">
-        <button class="btn" id="startMatchBtn">▶ GO</button>
-      </div>
-    </div>
+    <div id="matchContent">
 
-    <div class="match-live" id="matchLive" style="display:none;">
-      <div class="match-timer" id="matchTimer">05:00</div>
-      <div class="match-scoreboard">
-        <button class="match-team-btn admin-only" id="teamABtn" data-team="A">
-          <span class="jersey-dot" id="dotTeamA"></span><span id="nameTeamA">Команда A</span>
-        </button>
-        <div class="match-score" id="matchScore">0 - 0</div>
-        <button class="match-team-btn admin-only" id="teamBBtn" data-team="B">
-          <span class="jersey-dot" id="dotTeamB"></span><span id="nameTeamB">Команда Б</span>
-        </button>
+      <div class="teams-paste-block match-control" id="teamsPasteBox">
+        <div class="eyebrow" id="t_teamsPasteLabel">+ Вставить составы команд</div>
+        <textarea id="teamsPasteInput" rows="8" placeholder=""></textarea>
+        <button class="btn small" id="parseTeamsBtn">Разобрать</button>
+        <div id="teamsPastePreview"></div>
       </div>
-      <div class="match-team-labels-readonly" id="teamLabelsReadonly" style="display:none;"></div>
-      <div class="match-goals" id="matchGoalsLive"></div>
-      <div class="match-finish-row admin-only">
-        <button class="btn ghost small" id="finishMatchBtn" style="border-color:var(--danger);color:var(--danger);">🏁 <span id="t_finishBtn">Завершить матч</span></button>
-      </div>
-    </div>
 
-    <div class="scorer-modal" id="scorerModal" style="display:none;">
-      <div class="scorer-modal-inner">
-        <div class="eyebrow" id="t_scorerPick">Гол ⚽ — выбери автора</div>
-        <input type="search" id="scorerSearch" placeholder="">
-        <div id="scorerList" class="scorer-list"></div>
-        <button class="btn ghost small" id="scorerCancelBtn">✕</button>
+      <div class="teams-list-block" id="teamsListBlock" style="display:none;">
+        <div class="eyebrow" id="t_teamsListLabel">Команды турнира</div>
+        <div id="teamsListWrap"></div>
       </div>
-    </div>
 
-    <div class="match-history-block">
-      <div class="eyebrow" id="t_matchHistoryLabel" style="margin-top:24px;">История матчей — кто забивал</div>
-      <div id="matchHistoryWrap"></div>
+      <div class="match-setup match-control" id="matchSetupBox">
+        <div class="eyebrow" id="t_matchSetupLabel">Новый матч</div>
+        <div class="match-setup-row">
+          <select id="teamASavedSelect" style="min-width:150px;"></select>
+          <input type="text" id="teamAName" placeholder="Команда A">
+          <div class="swatches-inline" data-team="A" id="swatchesA"></div>
+        </div>
+        <div class="match-setup-row">
+          <select id="teamBSavedSelect" style="min-width:150px;"></select>
+          <input type="text" id="teamBName" placeholder="Команда Б">
+          <div class="swatches-inline" data-team="B" id="swatchesB"></div>
+        </div>
+        <div class="match-setup-row">
+          <label class="eyebrow" style="flex:none;" id="t_durationLabel">Тайм, минут</label>
+          <input type="number" id="matchDuration" min="1" max="60" value="5" style="width:80px;">
+          <button class="btn" id="startMatchBtn">▶ GO</button>
+        </div>
+      </div>
+
+      <div class="match-live" id="matchLive" style="display:none;">
+        <div class="match-timer" id="matchTimer">05:00</div>
+        <div class="match-scoreboard">
+          <button class="match-team-btn match-control" id="teamABtn" data-team="A">
+            <span class="jersey-dot" id="dotTeamA"></span><span id="nameTeamA">Команда A</span>
+          </button>
+          <div class="match-score" id="matchScore">0 - 0</div>
+          <button class="match-team-btn match-control" id="teamBBtn" data-team="B">
+            <span class="jersey-dot" id="dotTeamB"></span><span id="nameTeamB">Команда Б</span>
+          </button>
+        </div>
+        <div class="match-team-labels-readonly" id="teamLabelsReadonly" style="display:none;"></div>
+        <div class="match-goals" id="matchGoalsLive"></div>
+        <div class="match-finish-row match-control">
+          <button class="btn ghost small" id="finishMatchBtn" style="border-color:var(--danger);color:var(--danger);">🏁 <span id="t_finishBtn">Завершить матч</span></button>
+        </div>
+      </div>
+
+      <div class="scorer-modal" id="scorerModal" style="display:none;">
+        <div class="scorer-modal-inner">
+          <div class="eyebrow" id="t_scorerPick">Гол ⚽ — выбери автора</div>
+          <input type="search" id="scorerSearch" placeholder="">
+          <div id="scorerList" class="scorer-list"></div>
+          <button class="btn ghost small" id="scorerCancelBtn">✕</button>
+        </div>
+      </div>
+
+      <div class="match-history-block">
+        <div class="eyebrow" id="t_matchHistoryLabel" style="margin-top:24px;">История матчей — кто забивал</div>
+        <div id="matchHistoryWrap"></div>
+      </div>
     </div>
   </div>
 
@@ -740,6 +821,18 @@ const TR = {
   matchHistoryLabel:{ru:"История матчей — кто забивал",kk:"Матчтар тарихы — кім соқты"},
   noMatchesYet:{ru:"Матчей ещё не было",kk:"Әлі матч болған жоқ"},
   noGoals:{ru:"Без голов",kk:"Голсыз"},
+  teamsPasteLabel:{ru:"+ Вставить составы команд",kk:"+ Командалар құрамын қою"},
+  teamsPastePh:{ru:"Вставь сюда список: название команды, флаг, цветные кружки и нумерованные игроки",kk:"Тізімді осында қой: команда атауы, ту, түсті шеңберлер және нөмірленген ойыншылар"},
+  parseTeamsBtn:{ru:"Разобрать",kk:"Талдау"},
+  applyTeamsPrefix:{ru:(n)=>`Сохранить команды (${n})`,kk:(n)=>`Командаларды сақтау (${n})`},
+  teamsListLabel:{ru:"Команды турнира",kk:"Турнир командалары"},
+  customTeamOption:{ru:"— своя команда —",kk:"— өз командасы —"},
+  editMatchBtn:{ru:"Править",kk:"Өңдеу"},
+  doneEditBtn:{ru:"Готово",kk:"Дайын"},
+  deleteMatchBtn:{ru:"Удалить матч",kk:"Матчты жою"},
+  deleteMatchConfirm:{ru:"Удалить этот матч из истории?",kk:"Бұл матчты тарихтан жою керек пе?"},
+  changeScorer:{ru:"Сменить автора гола",kk:"Гол авторын ауыстыру"},
+  deleteGoal:{ru:"Удалить гол",kk:"Голды жою"},
   financeHead:{ru:"Финансы",kk:"Қаржы"},
   financeBalanceLabel:{ru:"баланс бюджета",kk:"бюджет балансы"},
   addReserveBtn:{ru:"+ 4000 ₸",kk:"+ 4000 ₸"},
@@ -838,6 +931,10 @@ const TR = {
   loginAdmin:{ru:"🔒 Войти как админ",kk:"🔒 Админ болып кіру"},
   logoutAdmin:{ru:"Выйти из админки",kk:"Админнен шығу"},
   adminPrompt:{ru:"Пароль администратора:",kk:"Админ құпия сөзі:"},
+  refereePrompt:{ru:"Код судьи:",kk:"Төреші коды:"},
+  refLogin:{ru:"Судья",kk:"Төреші"},
+  refBadge:{ru:"🟢 Судья",kk:"🟢 Төреші"},
+  exitRef:{ru:"Выйти",kk:"Шығу"},
   wrongPass:{ru:"Неверный пароль",kk:"Құпия сөз қате"},
   photoFail:{ru:"Не удалось загрузить фото",kk:"Фото жүктелмеді"},
   roleGK:{ru:"Вратарь",kk:"Қақпашы"},
@@ -888,6 +985,10 @@ function applyLanguage(){
   document.getElementById("t_cardsHead").textContent = t("cardsHead");
   document.getElementById("t_matchHead").textContent = t("matchHead");
   document.getElementById("t_matchSetupLabel").textContent = t("matchSetupLabel");
+  document.getElementById("t_teamsPasteLabel").textContent = t("teamsPasteLabel");
+  document.getElementById("teamsPasteInput").placeholder = t("teamsPastePh");
+  document.getElementById("parseTeamsBtn").textContent = t("parseTeamsBtn");
+  document.getElementById("t_teamsListLabel").textContent = t("teamsListLabel");
   document.getElementById("teamAName").placeholder = t("teamAPh");
   document.getElementById("teamBName").placeholder = t("teamBPh");
   document.getElementById("t_durationLabel").textContent = t("durationLabel");
@@ -921,6 +1022,9 @@ function applyLanguage(){
   document.getElementById("t_connWarning").textContent = t("connWarning");
   document.getElementById("connWarning").style.display = supabaseConnectionOk ? "none" : "flex";
   document.getElementById("t_bdayHeading").textContent = t("bdayHeading");
+  document.getElementById("t_refLogin").textContent = t("refLogin");
+  document.getElementById("t_refBadge").textContent = t("refBadge");
+  document.getElementById("t_exitRef").textContent = t("exitRef");
   renderStatLegend();
   renderBirthdays();
   renderMatch();
@@ -1104,6 +1208,7 @@ function longDate(lang, date){
   return lang==="kk" ? `${d} ${MONTHS_KK[m]} ${y} ж.` : `${d} ${MONTHS_RU[m]} ${y}`;
 }
 const ADMIN_PIN = "0722"; // поменяй этот код в файле, если хочешь свой пароль администратора
+const REFEREE_PIN = "1111"; // отдельный, более простой код для судьи — тоже можно поменять
 const DEFAULT_PAYMENT_DUE = "2026-08-12"; // сбор не каждую среду, а раз в месяц — эту дату меняет админ
 
 let customPlayers = [];
@@ -1117,6 +1222,7 @@ let awardCategories = [...DEFAULT_AWARD_CATEGORIES];
 let awardVotes = {};   // shared aggregate: {categoryId: {playerId:{sum,count}}}
 let myVotes = {};      // personal: {"catId:playerId": n}
 let adminMode = false;
+let refereeMode = false;
 let matchState = null;     // live match: {teamAName,teamAColor,teamBName,teamBColor,durationSec,startedAt,scoreA,scoreB,goals}
 let matchHistory = [];     // finished matches log
 let finance = {balance:0, transactions:[]};
@@ -1206,7 +1312,7 @@ async function loadState(){
   const [
     langVal, countriesVal, paymentsVal, customVal,
     rolesVal, overridesVal, categoriesVal, myVotesVal,
-    matchStateVal, matchHistoryVal, financeVal
+    matchStateVal, matchHistoryVal, financeVal, namedTeamsVal
   ] = await Promise.all([
     safeGet("lang-pref", false),
     safeGet("countries", true),
@@ -1219,6 +1325,7 @@ async function loadState(){
     safeGet("match-state", true),
     safeGet("match-history", true),
     safeGet("finance", true),
+    safeGet("named-teams", true),
   ]);
   if(langVal) LANG = langVal;
   if(countriesVal){ try{ countryMap = JSON.parse(countriesVal); }catch(e){} }
@@ -1231,6 +1338,7 @@ async function loadState(){
   if(matchStateVal){ try{ matchState = JSON.parse(matchStateVal); }catch(e){} }
   if(matchHistoryVal){ try{ matchHistory = JSON.parse(matchHistoryVal) || []; }catch(e){} }
   if(financeVal){ try{ finance = JSON.parse(financeVal) || {balance:0,transactions:[]}; }catch(e){} }
+  if(namedTeamsVal){ try{ namedTeams = JSON.parse(namedTeamsVal) || []; }catch(e){} }
 
   allPlayers = [...PLAYERS, ...customPlayers];
   allPlayers.forEach(p=>{ if(!countryMap[p.id]) countryMap[p.id]=defaultCountry(p); });
@@ -1245,8 +1353,10 @@ async function loadState(){
   photoKeys.forEach((k,i)=>{ if(photoResults[i]) photoMap[k.slice(6)] = photoResults[i]; });
   awardCategories.forEach((cat,i)=>{ if(voteResults[i]){ try{ awardVotes[cat.id] = JSON.parse(voteResults[i]); }catch(e){} } });
 }
-async function saveMatchState(){ try{ await storageSet("match-state", JSON.stringify(matchState), true); }catch(e){} }
-async function saveMatchHistory(){ try{ await storageSet("match-history", JSON.stringify(matchHistory), true); }catch(e){} }
+let lastMatchWrite = 0;
+async function saveMatchState(){ lastMatchWrite = Date.now(); try{ await storageSet("match-state", JSON.stringify(matchState), true); }catch(e){} }
+async function saveMatchHistory(){ lastMatchWrite = Date.now(); try{ await storageSet("match-history", JSON.stringify(matchHistory), true); }catch(e){} }
+async function saveNamedTeams(){ try{ await storageSet("named-teams", JSON.stringify(namedTeams), true); }catch(e){} }
 async function saveFinance(){ try{ await storageSet("finance", JSON.stringify(finance), true); }catch(e){} }
 async function saveCountries(){ try{ await storageSet("countries", JSON.stringify(countryMap), true); }catch(e){} }
 async function savePayments(){ try{ await storageSet("payments:"+paymentDueDate, JSON.stringify(paymentTracker), true); }catch(e){} }
@@ -1309,6 +1419,30 @@ document.getElementById("adminToggleBtn").addEventListener("click", ()=>{
   if(pin===null) return;
   if(pin===ADMIN_PIN){ adminMode=true; } else { alert(t("wrongPass")); }
   updateAdminUI();
+});
+
+/* ============ REFEREE FULLSCREEN MODE ============ */
+function enterRefereeFullscreen(){
+  document.getElementById("matchContentMount").appendChild(document.getElementById("matchContent"));
+  document.getElementById("refereeFullscreen").style.display = "block";
+  document.body.classList.add("referee-mode");
+  renderMatch();
+}
+function exitRefereeFullscreen(){
+  document.getElementById("panel-match").appendChild(document.getElementById("matchContent"));
+  document.getElementById("refereeFullscreen").style.display = "none";
+  document.body.classList.remove("referee-mode");
+}
+document.getElementById("refereeToggleBtn").addEventListener("click", ()=>{
+  if(refereeMode){ refereeMode=false; exitRefereeFullscreen(); return; }
+  const pin = prompt(t("refereePrompt"));
+  if(pin===null) return;
+  if(pin===REFEREE_PIN){ refereeMode=true; enterRefereeFullscreen(); }
+  else { alert(t("wrongPass")); }
+});
+document.getElementById("exitRefereeBtn").addEventListener("click", ()=>{
+  refereeMode = false;
+  exitRefereeFullscreen();
 });
 
 /* ============ COUNTDOWN ============ */
@@ -1448,9 +1582,196 @@ function renderCards(){
 
 /* ============ MATCH TAB (referee live control) ============ */
 const JERSEY_COLORS = ["#ec407a","#1565c0","#43a047","#ff7a1a","#ffd400","#8e24aa","#00acc1","#6d4c41"];
+const COLOR_EMOJI_MAP = {"🟣":"#8e24aa","🔵":"#1565c0","🟠":"#ff7a1a","🟢":"#43a047","🔴":"#e53935","🟡":"#ffd400","⚫":"#212121","⚪":"#f5f5f5","🟤":"#6d4c41"};
 let setupColorA = JERSEY_COLORS[0];
 let setupColorB = JERSEY_COLORS[1];
+let setupTeamIdA = null;
+let setupTeamIdB = null;
 let currentGoalTeam = null;
+let namedTeams = []; // [{id,name,flag,color,players:[{playerId,isReserve,isCaptain}]}]
+
+function normalizeName(s){
+  return s.toLowerCase()
+    .replace(/ё/g,"е")
+    .replace(/[әа]/g,"а")
+    .replace(/[қк]/g,"к")
+    .replace(/[ұүу]/g,"у")
+    .replace(/[ғг]/g,"г")
+    .replace(/[іи]/g,"и")
+    .replace(/[ңн]/g,"н")
+    .replace(/[өo]/g,"о")
+    .replace(/\s+/g," ")
+    .trim();
+}
+function bestMatchPlayer(rawName){
+  const norm = normalizeName(rawName);
+  const tokens = norm.split(" ");
+  let best=null, bestScore=0;
+  allPlayers.forEach(p=>{
+    const pn = normalizeName(p.name);
+    const ptoks = pn.split(" ");
+    let score=0;
+    if(pn===norm) score=100;
+    else if(ptoks[0]===tokens[0]){
+      const restP = ptoks.slice(1).join(" "), restT = tokens.slice(1).join(" ");
+      if(restP && restT) score = 30;                       // both have different qualifiers -> different people
+      else if(restT && !restP) score = /^(\d+|.)$/.test(restT) ? 30 : 60; // "Асхат 2", "Самат С" -> likely another person
+      else score = 50;                                      // roster has a qualifier, pasted has none
+    } else if(pn.includes(norm) || norm.includes(pn)){
+      score = 40;
+    }
+    if(score>bestScore){ bestScore=score; best=p; }
+  });
+  return bestScore>=45 ? best : null;
+}
+function parseTeamsBlock(text){
+  const cleaned = text.replace(/[\u200B\u2060\uFEFF\u200C\u200D]/g,"");
+  const lines = cleaned.split(/\r?\n/);
+  const FLAG_RE = /[\u{1F1E6}-\u{1F1FF}]{2}/gu;
+  const teams = [];
+  let current = null;
+  lines.forEach(line=>{
+    const trimmed = line.trim();
+    if(!trimmed) return;
+    const colorChar = Object.keys(COLOR_EMOJI_MAP).find(ch=>trimmed.includes(ch));
+    if(colorChar){
+      const flagMatch = trimmed.match(FLAG_RE);
+      const flag = flagMatch ? flagMatch[0] : "";
+      let namePart = trimmed;
+      Object.keys(COLOR_EMOJI_MAP).forEach(ch=>{ namePart = namePart.split(ch).join(""); });
+      if(flag) namePart = namePart.split(flag).join("");
+      namePart = namePart.replace(/[⚽!]/g,"").trim();
+      current = { id: "team_"+Date.now()+"_"+teams.length, name: namePart || "Team", flag, color: COLOR_EMOJI_MAP[colorChar], players: [] };
+      teams.push(current);
+      return;
+    }
+    const m = trimmed.match(/^\s*\d+\s*[.)]\s*(.+?)\s*$/);
+    if(m && current){
+      let raw = m[1];
+      const isCaptain = /\(\s*[кk]\s*\)+\s*$/i.test(raw);
+      raw = raw.replace(/\(\s*[кk]\s*\)+\s*$/i, "").trim();
+      const isReserve = /резерв/i.test(raw);
+      raw = raw.replace(/резерв/ig,"").replace(/[()]/g,"").replace(/\s+/g," ").trim();
+      if(raw) current.players.push({raw, isReserve, isCaptain});
+    }
+  });
+  return teams.filter(t=>t.players.length);
+}
+function renderTeamsPastePreview(teams){
+  const wrap = document.getElementById("teamsPastePreview");
+  if(!teams.length){ wrap.innerHTML = `<div class="paste-hint">${t("noLinesFound")}</div>`; return; }
+  const sortedPlayers = [...allPlayers].sort((a,b)=>a.name.localeCompare(b.name,"ru"));
+  wrap.innerHTML = teams.map((team,ti)=>{
+    const rows = team.players.map((it,pi)=>{
+      const match = bestMatchPlayer(it.raw);
+      const options = [`<option value="__new__">${t("addNewOption")}</option>`]
+        .concat(sortedPlayers.map(p=>`<option value="${p.id}" ${match&&match.id===p.id?"selected":""}>${p.name}</option>`)).join("");
+      return `<div class="tp-player-row">
+        <span class="raw">${it.raw}</span>
+        <select data-team="${ti}" data-player="${pi}">${options}</select>
+        ${it.isCaptain?`<span class="tp-tag cap">(к)</span>`:""}
+        ${it.isReserve?`<span class="tp-tag res">резерв</span>`:""}
+      </div>`;
+    }).join("");
+    return `<div class="tp-team-block">
+      <div class="tp-team-head"><span class="tp-color" style="background:${team.color}"></span>${team.flag} ${team.name}</div>
+      ${rows}
+    </div>`;
+  }).join("") + `
+    <div class="paste-actions">
+      <button class="btn small" id="applyTeamsBtn">${t("applyTeamsPrefix", teams.length)}</button>
+      <button class="btn ghost small" id="cancelTeamsBtn">${t("cancelBtn")}</button>
+    </div>`;
+  document.getElementById("applyTeamsBtn").addEventListener("click", ()=>applyParsedTeams(teams));
+  document.getElementById("cancelTeamsBtn").addEventListener("click", ()=>{
+    wrap.innerHTML=""; document.getElementById("teamsPasteInput").value="";
+  });
+}
+document.getElementById("parseTeamsBtn").addEventListener("click", ()=>{
+  const text = document.getElementById("teamsPasteInput").value;
+  renderTeamsPastePreview(parseTeamsBlock(text));
+});
+function applyParsedTeams(teams){
+  const wrap = document.getElementById("teamsPastePreview");
+  let addedCustom = false;
+  teams.forEach((team,ti)=>{
+    const resolvedPlayers = team.players.map((it,pi)=>{
+      const sel = wrap.querySelector(`select[data-team="${ti}"][data-player="${pi}"]`);
+      const val = sel ? sel.value : "__new__";
+      let pid;
+      if(val==="__new__"){
+        pid = Math.max(0,...allPlayers.map(p=>p.id))+1;
+        const np = {id:pid, name:it.raw, pos:"MID", birth:null, paidJuly:false, reserve:it.isReserve, custom:true};
+        customPlayers.push(np); allPlayers.push(np);
+        countryMap[pid] = defaultCountry(np);
+        addedCustom = true;
+      } else {
+        pid = Number(val);
+      }
+      return {playerId:pid, isReserve:it.isReserve, isCaptain:it.isCaptain};
+    });
+    // replace an existing team with the same name, or add new
+    const existingIdx = namedTeams.findIndex(nt=>normalizeName(nt.name)===normalizeName(team.name));
+    const finalTeam = {id: existingIdx!==-1?namedTeams[existingIdx].id:team.id, name:team.name, flag:team.flag, color:team.color, players:resolvedPlayers};
+    if(existingIdx!==-1) namedTeams[existingIdx] = finalTeam; else namedTeams.push(finalTeam);
+  });
+  saveNamedTeams();
+  if(addedCustom) saveCustomPlayers();
+  saveCountries();
+  wrap.innerHTML = "";
+  document.getElementById("teamsPasteInput").value = "";
+  renderNamedTeamsList();
+  populateSavedTeamSelects();
+  renderCards(); renderFinance();
+}
+function renderNamedTeamsList(){
+  const block = document.getElementById("teamsListBlock");
+  const wrap = document.getElementById("teamsListWrap");
+  if(!namedTeams.length){ block.style.display = "none"; return; }
+  block.style.display = "block";
+  wrap.className = "teams-list-wrap-grid";
+  wrap.innerHTML = namedTeams.map(team=>{
+    const rosterHtml = team.players.map(pl=>{
+      const p = allPlayers.find(x=>x.id===pl.playerId);
+      const name = p ? p.name : "?";
+      return `${pl.isCaptain?"<b>"+name+" (к)</b>":name}${pl.isReserve?" · "+t("reserve"):""}`;
+    }).join(", ");
+    return `<div class="tl-card">
+      <div class="tl-head"><span class="tl-color" style="background:${team.color}"></span>${team.flag} ${team.name}</div>
+      <div class="tl-roster">${rosterHtml}</div>
+      ${adminMode?`<div class="tl-del" data-id="${team.id}">✕ ${t("cancelBtn")}</div>`:""}
+    </div>`;
+  }).join("");
+  if(adminMode){
+    wrap.querySelectorAll(".tl-del").forEach(el=>{
+      el.addEventListener("click", ()=>{
+        namedTeams = namedTeams.filter(t2=>t2.id!==el.dataset.id);
+        saveNamedTeams();
+        renderNamedTeamsList();
+        populateSavedTeamSelects();
+      });
+    });
+  }
+}
+function populateSavedTeamSelects(){
+  ["A","B"].forEach(side=>{
+    const sel = document.getElementById("team"+side+"SavedSelect");
+    const current = sel.value;
+    sel.innerHTML = `<option value="">${t("customTeamOption")}</option>` +
+      namedTeams.map(tm=>`<option value="${tm.id}">${tm.flag} ${tm.name}</option>`).join("");
+    if(namedTeams.some(tm=>tm.id===current)) sel.value = current;
+  });
+}
+document.getElementById("teamASavedSelect").addEventListener("change",(e)=>{
+  setupTeamIdA = e.target.value || null;
+  const tm = namedTeams.find(x=>x.id===setupTeamIdA);
+  if(tm){ document.getElementById("teamAName").value = tm.name; setupColorA = tm.color; renderSwatchesInline(); }
+});
+document.getElementById("teamBSavedSelect").addEventListener("change",(e)=>{
+  setupTeamIdB = e.target.value || null;
+  const tm = namedTeams.find(x=>x.id===setupTeamIdB);
+  if(tm){ document.getElementById("teamBName").value = tm.name; setupColorB = tm.color; renderSwatchesInline(); }
+});
 
 function renderSwatchesInline(){
   ["A","B"].forEach(team=>{
@@ -1471,7 +1792,8 @@ function startMatch(){
   const nameB = document.getElementById("teamBName").value.trim() || "B";
   const durMin = Math.max(1, Number(document.getElementById("matchDuration").value)||5);
   matchState = {
-    teamAName:nameA, teamAColor:setupColorA, teamBName:nameB, teamBColor:setupColorB,
+    teamAName:nameA, teamAColor:setupColorA, teamAId:setupTeamIdA,
+    teamBName:nameB, teamBColor:setupColorB, teamBId:setupTeamIdB,
     durationSec: durMin*60, startedAt: Date.now(), scoreA:0, scoreB:0, goals:[], timeUp:false
   };
   saveMatchState();
@@ -1491,8 +1813,24 @@ function tickMatch(){
   el.textContent = `${mm}:${ss}`;
   el.classList.toggle("time-up", !!matchState.timeUp);
 }
-function openScorerModal(team){
-  if(!matchState) return;
+let goalEditCtx = null; // null = add live goal | {scope:"live",index} | {scope:"history",matchIdx,index|null}
+const historyEditOpen = new Set();
+
+function recomputeScores(m){
+  m.scoreA = m.goals.filter(g=>g.team==="A").length;
+  m.scoreB = m.goals.filter(g=>g.team==="B").length;
+}
+function scorerSourceMatch(){
+  if(goalEditCtx && goalEditCtx.scope==="history") return matchHistory[goalEditCtx.matchIdx] || null;
+  return matchState;
+}
+function closeScorerModal(){
+  document.getElementById("scorerModal").style.display = "none";
+  goalEditCtx = null;
+}
+function openScorerModal(team, ctx){
+  goalEditCtx = ctx || null;
+  if(!scorerSourceMatch()){ goalEditCtx = null; return; }
   currentGoalTeam = team;
   document.getElementById("scorerModal").style.display = "flex";
   document.getElementById("scorerSearch").value = "";
@@ -1500,21 +1838,45 @@ function openScorerModal(team){
 }
 function renderScorerList(q){
   const list = document.getElementById("scorerList");
-  const filtered = [...allPlayers].sort((a,b)=>a.name.localeCompare(b.name,"ru")).filter(p=>p.name.toLowerCase().includes(q.toLowerCase()));
+  const src = scorerSourceMatch();
+  const teamId = src ? (currentGoalTeam==="A" ? src.teamAId : src.teamBId) : null;
+  const namedTeam = teamId ? namedTeams.find(tm=>tm.id===teamId) : null;
+  let pool = allPlayers;
+  if(namedTeam){
+    const ids = new Set(namedTeam.players.map(pl=>pl.playerId));
+    pool = allPlayers.filter(p=>ids.has(p.id));
+  }
+  const filtered = [...pool].sort((a,b)=>a.name.localeCompare(b.name,"ru")).filter(p=>p.name.toLowerCase().includes(q.toLowerCase()));
   list.innerHTML = filtered.map(p=>`<div class="scorer-item" data-id="${p.id}">${p.name}</div>`).join("");
   list.querySelectorAll(".scorer-item").forEach(el=>{
     el.addEventListener("click", ()=> confirmGoal(Number(el.dataset.id)));
   });
 }
 document.getElementById("scorerSearch").addEventListener("input",(e)=>renderScorerList(e.target.value));
-document.getElementById("scorerCancelBtn").addEventListener("click", ()=>{ document.getElementById("scorerModal").style.display="none"; });
+document.getElementById("scorerCancelBtn").addEventListener("click", closeScorerModal);
 function confirmGoal(playerId){
-  if(!matchState) return;
-  const elapsed = Math.floor((Date.now()-matchState.startedAt)/1000);
-  matchState.goals.push({team:currentGoalTeam, playerId, atSec:elapsed});
-  if(currentGoalTeam==="A") matchState.scoreA++; else matchState.scoreB++;
-  document.getElementById("scorerModal").style.display = "none";
-  saveMatchState();
+  const ctx = goalEditCtx;
+  if(ctx && ctx.scope==="history"){
+    const m = matchHistory[ctx.matchIdx];
+    if(m){
+      if(ctx.index!==null && ctx.index!==undefined && m.goals[ctx.index]) m.goals[ctx.index].playerId = playerId;
+      else m.goals.push({team:currentGoalTeam, playerId, atSec:null});
+      recomputeScores(m);
+      saveMatchHistory();
+    }
+  } else if(ctx && ctx.scope==="live"){
+    if(matchState && matchState.goals[ctx.index]){
+      matchState.goals[ctx.index].playerId = playerId;
+      saveMatchState();
+    }
+  } else {
+    if(!matchState) { closeScorerModal(); return; }
+    const elapsed = Math.floor((Date.now()-matchState.startedAt)/1000);
+    matchState.goals.push({team:currentGoalTeam, playerId, atSec:elapsed});
+    recomputeScores(matchState);
+    saveMatchState();
+  }
+  closeScorerModal();
   renderMatch();
 }
 document.getElementById("teamABtn").addEventListener("click", ()=>openScorerModal("A"));
@@ -1523,10 +1885,11 @@ document.getElementById("teamBBtn").addEventListener("click", ()=>openScorerModa
 function finishMatch(){
   if(!matchState) return;
   if(!confirm(t("finishConfirm"))) return;
+  recomputeScores(matchState);
   matchHistory.unshift({
     id: Date.now(),
-    teamAName: matchState.teamAName, teamAColor: matchState.teamAColor,
-    teamBName: matchState.teamBName, teamBColor: matchState.teamBColor,
+    teamAName: matchState.teamAName, teamAColor: matchState.teamAColor, teamAId: matchState.teamAId || null,
+    teamBName: matchState.teamBName, teamBColor: matchState.teamBColor, teamBId: matchState.teamBId || null,
     scoreA: matchState.scoreA, scoreB: matchState.scoreB,
     goals: matchState.goals, finishedAt: Date.now()
   });
@@ -1537,25 +1900,89 @@ function finishMatch(){
 }
 document.getElementById("finishMatchBtn").addEventListener("click", finishMatch);
 
+function goalLineHtml(g, gi, teamName, scope, mi){
+  const p = allPlayers.find(x=>x.id===g.playerId);
+  const ctl = `<span class="goal-ctl match-control" data-scope="${scope}" data-mi="${mi}" data-idx="${gi}" data-action="change" title="${t("changeScorer")}">✎</span>`
+            + `<span class="goal-ctl match-control" data-scope="${scope}" data-mi="${mi}" data-idx="${gi}" data-action="del" title="${t("deleteGoal")}">✕</span>`;
+  return `<div class="goal-line">⚽ ${p?p.name:"?"} — ${teamName} ${ctl}</div>`;
+}
 function renderMatchHistory(){
   const wrap = document.getElementById("matchHistoryWrap");
   if(!matchHistory.length){ wrap.innerHTML = `<div class="paste-hint">${t("noMatchesYet")}</div>`; return; }
-  wrap.innerHTML = matchHistory.map(m=>{
+  wrap.innerHTML = matchHistory.map((m,mi)=>{
     const dt = new Date(m.finishedAt);
     const dateStr = `${String(dt.getDate()).padStart(2,"0")}.${String(dt.getMonth()+1).padStart(2,"0")} ${String(dt.getHours()).padStart(2,"0")}:${String(dt.getMinutes()).padStart(2,"0")}`;
-    const goalsTxt = m.goals.length ? m.goals.map(g=>{
-      const p = allPlayers.find(x=>x.id===g.playerId);
-      const teamName = g.team==="A" ? m.teamAName : m.teamBName;
-      return `⚽ ${p?p.name:"?"} (${teamName})`;
-    }).join(" · ") : t("noGoals");
+    const open = historyEditOpen.has(m.id);
+    let goalsHtml;
+    if(open){
+      goalsHtml = (m.goals.length ? m.goals.map((g,gi)=>goalLineHtml(g, gi, g.team==="A"?m.teamAName:m.teamBName, "history", mi)).join("") : `<div class="goal-line">${t("noGoals")}</div>`)
+        + `<div class="mh-actions">
+             <span class="mh-btn match-control" data-action="add" data-team="A" data-mi="${mi}">+ ⚽ ${m.teamAName}</span>
+             <span class="mh-btn match-control" data-action="add" data-team="B" data-mi="${mi}">+ ⚽ ${m.teamBName}</span>
+             <span class="mh-btn danger match-control" data-action="delete-match" data-mi="${mi}">🗑 ${t("deleteMatchBtn")}</span>
+           </div>`;
+    } else {
+      goalsHtml = m.goals.length ? m.goals.map(g=>{
+        const p = allPlayers.find(x=>x.id===g.playerId);
+        const teamName = g.team==="A" ? m.teamAName : m.teamBName;
+        return `⚽ ${p?p.name:"?"} (${teamName})`;
+      }).join(" · ") : t("noGoals");
+    }
     return `<div class="match-history-item">
-      <div class="match-history-head"><span>${m.teamAName} ${m.scoreA} - ${m.scoreB} ${m.teamBName}</span><span class="mh-date">${dateStr}</span></div>
-      <div class="match-history-goals">${goalsTxt}</div>
+      <div class="match-history-head">
+        <span>${m.teamAName} ${m.scoreA} - ${m.scoreB} ${m.teamBName}</span>
+        <span class="mh-date">${dateStr} <span class="mh-btn match-control" data-action="toggle-edit" data-mi="${mi}">✎ ${open?t("doneEditBtn"):t("editMatchBtn")}</span></span>
+      </div>
+      <div class="match-history-goals">${goalsHtml}</div>
     </div>`;
   }).join("");
 }
+document.getElementById("matchContent").addEventListener("click",(e)=>{
+  const goalEl = e.target.closest(".goal-ctl");
+  if(goalEl){
+    const idx = Number(goalEl.dataset.idx), scope = goalEl.dataset.scope, action = goalEl.dataset.action;
+    if(scope==="live"){
+      if(!matchState || !matchState.goals[idx]) return;
+      if(action==="del"){
+        matchState.goals.splice(idx,1); recomputeScores(matchState); saveMatchState(); renderMatch();
+      } else {
+        openScorerModal(matchState.goals[idx].team, {scope:"live", index:idx});
+      }
+    } else {
+      const mi = Number(goalEl.dataset.mi), m = matchHistory[mi];
+      if(!m || !m.goals[idx]) return;
+      if(action==="del"){
+        m.goals.splice(idx,1); recomputeScores(m); saveMatchHistory(); renderMatch();
+      } else {
+        openScorerModal(m.goals[idx].team, {scope:"history", matchIdx:mi, index:idx});
+      }
+    }
+    return;
+  }
+  const btn = e.target.closest(".mh-btn");
+  if(btn){
+    const mi = Number(btn.dataset.mi), m = matchHistory[mi];
+    if(!m) return;
+    const action = btn.dataset.action;
+    if(action==="toggle-edit"){
+      if(historyEditOpen.has(m.id)) historyEditOpen.delete(m.id); else historyEditOpen.add(m.id);
+      renderMatchHistory();
+    } else if(action==="add"){
+      openScorerModal(btn.dataset.team, {scope:"history", matchIdx:mi, index:null});
+    } else if(action==="delete-match"){
+      if(!confirm(t("deleteMatchConfirm"))) return;
+      historyEditOpen.delete(m.id);
+      matchHistory.splice(mi,1);
+      saveMatchHistory();
+      renderMatch();
+    }
+  }
+});
+
 function renderMatch(){
   renderSwatchesInline();
+  renderNamedTeamsList();
+  populateSavedTeamSelects();
   const hasMatch = !!matchState;
   document.getElementById("matchSetupBox").style.display = hasMatch ? "none" : "flex";
   document.getElementById("matchLive").style.display = hasMatch ? "block" : "none";
@@ -1566,23 +1993,24 @@ function renderMatch(){
     document.getElementById("nameTeamB").textContent = matchState.teamBName;
     document.getElementById("matchScore").textContent = `${matchState.scoreA} - ${matchState.scoreB}`;
     const roLabel = document.getElementById("teamLabelsReadonly");
-    roLabel.style.display = adminMode ? "none" : "flex";
+    roLabel.style.display = (adminMode || refereeMode) ? "none" : "flex";
     roLabel.innerHTML = `<span><span class="jersey-dot" style="background:${matchState.teamAColor};display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;"></span>${matchState.teamAName}</span><span><span class="jersey-dot" style="background:${matchState.teamBColor};display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;"></span>${matchState.teamBName}</span>`;
     const goalsWrap = document.getElementById("matchGoalsLive");
-    goalsWrap.innerHTML = matchState.goals.length ? matchState.goals.map(g=>{
-      const p = allPlayers.find(x=>x.id===g.playerId);
-      const teamName = g.team==="A" ? matchState.teamAName : matchState.teamBName;
-      return `<div class="goal-line">⚽ ${p?p.name:"?"} — ${teamName}</div>`;
-    }).join("") : "";
+    goalsWrap.innerHTML = matchState.goals.map((g,gi)=>
+      goalLineHtml(g, gi, g.team==="A" ? matchState.teamAName : matchState.teamBName, "live", 0)
+    ).join("");
     tickMatch();
   }
   renderMatchHistory();
 }
 async function pollMatchState(){
+  if(Date.now()-lastMatchWrite < 6000) return; // don't clobber a fresh local edit
   const before = supabaseConnectionOk;
-  const v = await safeGet("match-state", true);
-  if(before && !supabaseConnectionOk){ return; } // connection just failed — keep local state, don't wipe it
+  const [v, h] = await Promise.all([safeGet("match-state", true), safeGet("match-history", true)]);
+  if(before && !supabaseConnectionOk){ return; } // connection just failed — keep local state
+  if(Date.now()-lastMatchWrite < 6000) return;   // a local edit happened while fetching
   if(v){ try{ matchState = JSON.parse(v); }catch(e){} } else { matchState = null; }
+  if(h){ try{ matchHistory = JSON.parse(h) || []; }catch(e){} }
   renderMatch();
 }
 
