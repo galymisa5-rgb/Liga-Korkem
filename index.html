@@ -757,10 +757,10 @@ async function storageGet(key, shared=true){
   }
   try{
     const { data, error } = await sb.from("app_data").select("value").eq("key", key).maybeSingle();
-    if(error){ supabaseConnectionOk = false; console.error("Supabase read error:", error); return null; }
+    if(error){ supabaseConnectionOk = false; console.error("Supabase read error:", error); return {key,error}; }
     if(!data) return null; // key genuinely doesn't exist yet — not an error
     return { key, value:data.value, shared:true };
-  }catch(e){ supabaseConnectionOk = false; console.error("Supabase read exception:", e); return null; }
+  }catch(e){ supabaseConnectionOk = false; console.error("Supabase read exception:", e); return {key,error:e}; }
 }
 async function storageSet(key, value, shared=true){
   if(!shared){
@@ -1584,7 +1584,9 @@ function renderCards(){
 
 /* ============ MATCH TAB (referee live control) ============ */
 const JERSEY_COLORS = ["#ec407a","#1565c0","#43a047","#ff7a1a","#ffd400","#8e24aa","#00acc1","#6d4c41"];
-const COLOR_EMOJI_MAP = {"🟣":"#8e24aa","🔵":"#1565c0","🟠":"#ff7a1a","🟢":"#43a047","🔴":"#e53935","🟡":"#ffd400","⚫":"#212121","⚪":"#f5f5f5","🟤":"#6d4c41"};
+const COLOR_EMOJI_MAP = {"🟣":"#8e24aa","🔵":"#1565c0","🟠":"#ff7a1a","🟢":"#43a047","🔴":"#e53935","🟡":"#ffd400","⚫":"#212121","⚪":"#f5f5f5","🟤":"#6d4c41",
+  "💜":"#8e24aa","💙":"#1565c0","🧡":"#ff7a1a","💚":"#43a047","❤":"#e53935","💛":"#ffd400","🖤":"#212121","🤍":"#f5f5f5","🤎":"#6d4c41",
+  "💗":"#ec4899","🩷":"#ec4899","💕":"#ec4899","💖":"#ec4899","💓":"#ec4899","💞":"#ec4899","💘":"#ec4899","💝":"#ec4899","🩵":"#4fd1e8"};
 let setupColorA = JERSEY_COLORS[0];
 let setupColorB = JERSEY_COLORS[1];
 let setupTeamIdA = null;
@@ -1627,7 +1629,7 @@ function bestMatchPlayer(rawName){
   return bestScore>=45 ? best : null;
 }
 function parseTeamsBlock(text){
-  const cleaned = text.replace(/[\u200B\u2060\uFEFF\u200C\u200D]/g,"");
+  const cleaned = text.replace(/[\u200B\u2060\uFEFF\u200C\u200D\uFE0F]/g,"");
   const lines = cleaned.split(/\r?\n/);
   const FLAG_RE = /[\u{1F1E6}-\u{1F1FF}]{2}/gu;
   const teams = [];
@@ -2007,10 +2009,10 @@ function renderMatch(){
 }
 async function pollMatchState(){
   if(Date.now()-lastMatchWrite < 6000) return; // don't clobber a fresh local edit
-  const before = supabaseConnectionOk;
-  const [v, h] = await Promise.all([safeGet("match-state", true), safeGet("match-history", true)]);
-  if(before && !supabaseConnectionOk){ return; } // connection just failed — keep local state
+  const [live, history] = await Promise.all([storageGet("match-state", true), storageGet("match-history", true)]);
+  if(live?.error || history?.error) return; // every failed poll must preserve local state
   if(Date.now()-lastMatchWrite < 6000) return;   // a local edit happened while fetching
+  const v = live?.value, h = history?.value;
   if(v){ try{ matchState = JSON.parse(v); }catch(e){} } else { matchState = null; }
   if(h){ try{ matchHistory = JSON.parse(h) || []; }catch(e){} }
   renderMatch();
@@ -2107,15 +2109,26 @@ function renderPayments(){
     });
   }
 }
-document.getElementById("saveDueDateBtn").addEventListener("click", ()=>{
+document.getElementById("saveDueDateBtn").addEventListener("click", async ()=>{
   const val = document.getElementById("dueDateInput").value;
-  if(!val) return;
+  if(!adminMode || !val || val===paymentDueDate) return;
+  const button = document.getElementById("saveDueDateBtn");
+  button.disabled = true;
+  try{
+  const saved = await storageGet("payments:"+val, true);
+  if(saved?.error) return;
+  let tracker = {};
+  if(saved){
+    try{ tracker = JSON.parse(saved.value); }catch(e){ return; }
+    if(!tracker || typeof tracker!=="object" || Array.isArray(tracker)) return;
+  }
+  const result = await storageSet("payment-due-date", val, true);
+  if(!result) return;
   paymentDueDate = val;
-  paymentTracker = {}; // fresh tracker for the new collection period
-  savePaymentDueDate();
-  savePayments();
+  paymentTracker = tracker; // restore this period without overwriting its saved payments
   applyLanguage(); // refreshes reminder banner / labels that show the due date
   renderPayments();
+  }finally{ button.disabled = false; }
 });
 
 /* ============ AWARDS TAB ============ */
