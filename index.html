@@ -653,8 +653,7 @@ footer.appfoot{text-align:center;color:var(--ink-dim);font-size:11.5px;margin-to
 
       <div class="match-live" id="matchLive" style="display:none;">
         <div id="tournamentQueue" style="white-space:pre-line;margin-bottom:18px;"></div>
-        <button class="btn match-control" id="startQueuedMatchBtn" style="display:none;">▶ Начать следующий матч</button>
-        <button class="btn ghost small match-control" id="endTournamentBtn" style="display:none;">Закончить турнир</button>
+        <button class="btn match-control" id="startQueuedMatchBtn" style="display:none;">▶ Начать матч</button>
         <div class="match-timer" id="matchTimer">05:00</div>
         <div class="match-scoreboard">
           <button class="match-team-btn match-control" id="teamABtn" data-team="A">
@@ -1816,6 +1815,29 @@ function startMatch(){
 document.getElementById("startMatchBtn").addEventListener("click", startMatch);
 
 /* Tournament queue is saved with the match so every device sees the same order. */
+function tournamentDeadline(now=Date.now()){
+  const parts = new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Qyzylorda",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(now);
+  const value = type=>parts.find(part=>part.type===type).value;
+  return new Date(`${value("year")}-${value("month")}-${value("day")}T23:30:00+05:00`).getTime();
+}
+function clockTime(at){
+  return new Intl.DateTimeFormat("ru-RU",{timeZone:"Asia/Qyzylorda",hour:"2-digit",minute:"2-digit",second:"2-digit"}).format(at);
+}
+function elapsedTime(seconds){
+  return `${String(Math.floor(seconds/60)).padStart(2,"0")}:${String(seconds%60).padStart(2,"0")}`;
+}
+function goalTimeLabel(goal,match){
+  const at = goal.scoredAt ?? (Number.isFinite(goal.atSec) && Number.isFinite(match?.startedAt) ? match.startedAt+goal.atSec*1000 : null);
+  return at===null ? "" : ` · ${clockTime(at)}`;
+}
+function closeExpiredTournament(){
+  if(!matchState?.tournament || (!adminMode && !refereeMode)) return false;
+  const deadline = matchState.tournament.endsAt ?? tournamentDeadline(matchState.startedAt ?? Date.now());
+  if(Date.now()<deadline) return false;
+  if(matchState.startedAt!==null) finishMatch(true,Math.min(deadline,matchState.startedAt+matchState.durationSec*1000),true);
+  else { matchState=null; saveMatchState(); renderMatch(); }
+  return true;
+}
 function renderTournamentOrderInputs(){
   const wrap = document.getElementById("tournamentOrderInputs");
   const previous = Array.from(wrap.querySelectorAll("select"), select=>select.value);
@@ -1871,22 +1893,20 @@ document.getElementById("confirmTournamentOrderBtn").addEventListener("click", (
     alert("Назначьте каждую команду на одно место: 1, 2, 3, 4. Команды не должны повторяться."); return;
   }
   const durationSec = clamp(Number(document.getElementById("matchDuration").value)||5,1,60)*60;
-  matchState = queuedMatch({draw:order.slice(),playing:order.slice(0,2),waiting:order.slice(2),round:1},durationSec);
+  const endsAt = tournamentDeadline();
+  if(Date.now()>=endsAt){ alert("Турнир на сегодня завершён в 23:30."); return; }
+  matchState = queuedMatch({draw:order.slice(),playing:order.slice(0,2),waiting:order.slice(2),round:1,endsAt},durationSec);
   saveMatchState(); renderMatch();
 });
 document.getElementById("startQueuedMatchBtn").addEventListener("click", ()=>{
+  if(closeExpiredTournament()) return;
   if(!matchState || matchState.startedAt!==null || (!adminMode && !refereeMode)) return;
   matchState.startedAt = Date.now();
   saveMatchState(); renderMatch();
 });
-document.getElementById("endTournamentBtn").addEventListener("click", ()=>{
-  if(!matchState?.tournament || matchState.startedAt!==null || (!adminMode && !refereeMode)) return;
-  if(!confirm("Закончить турнир? История сыгранных матчей сохранится.")) return;
-  matchState = null;
-  saveMatchState(); renderMatch();
-});
 
 function tickMatch(){
+  if(closeExpiredTournament()) return;
   if(!matchState) return;
   const el = document.getElementById("matchTimer");
   if(!el) return;
@@ -1897,7 +1917,7 @@ function tickMatch(){
   const ss = String(remaining%60).padStart(2,"0");
   el.textContent = `${mm}:${ss}`;
   el.classList.toggle("time-up", !!matchState.timeUp);
-  if(remaining===0 && matchState.tournament && (adminMode || refereeMode)) finishMatch(true);
+  if(remaining===0 && matchState.tournament && (adminMode || refereeMode)) finishMatch(true,matchState.startedAt+matchState.durationSec*1000);
 }
 let goalEditCtx = null; // null = add live goal | {scope:"live",index} | {scope:"history",matchIdx,index|null}
 const historyEditOpen = new Set();
@@ -1959,7 +1979,7 @@ function confirmGoal(playerId){
   } else {
     if(!matchState) { closeScorerModal(); return; }
     const elapsed = Math.floor((Date.now()-matchState.startedAt)/1000);
-    matchState.goals.push({team:currentGoalTeam, playerId, atSec:elapsed});
+    matchState.goals.push({team:currentGoalTeam, playerId, atSec:elapsed,scoredAt:Date.now()});
     recomputeScores(matchState);
     if(matchState.scoreA>=2 || matchState.scoreB>=2){
       closeScorerModal();
@@ -1974,7 +1994,7 @@ function confirmGoal(playerId){
 document.getElementById("teamABtn").addEventListener("click", ()=>openScorerModal("A"));
 document.getElementById("teamBBtn").addEventListener("click", ()=>openScorerModal("B"));
 
-function finishMatch(automatic=false){
+function finishMatch(automatic=false,finishedAt=Date.now(),stopTournament=false){
   if(!matchState) return;
   if(matchState.startedAt===null) return;
   if(automatic!==true && !confirm(t("finishConfirm"))) return;
@@ -1984,9 +2004,10 @@ function finishMatch(automatic=false){
     teamAName: matchState.teamAName, teamAColor: matchState.teamAColor, teamAId: matchState.teamAId || null,
     teamBName: matchState.teamBName, teamBColor: matchState.teamBColor, teamBId: matchState.teamBId || null,
     scoreA: matchState.scoreA, scoreB: matchState.scoreB,
-    goals: matchState.goals, finishedAt: Date.now()
+    goals: matchState.goals, startedAt:matchState.startedAt, finishedAt,
+    elapsedSec:Math.max(0,Math.floor((finishedAt-matchState.startedAt)/1000))
   });
-  matchState = advanceTournament(matchState);
+  matchState = stopTournament ? null : advanceTournament(matchState);
   saveMatchState();
   saveMatchHistory();
   renderMatch();
@@ -1997,7 +2018,8 @@ function goalLineHtml(g, gi, teamName, scope, mi){
   const p = allPlayers.find(x=>x.id===g.playerId);
   const ctl = `<span class="goal-ctl match-control" data-scope="${scope}" data-mi="${mi}" data-idx="${gi}" data-action="change" title="${t("changeScorer")}">✎</span>`
             + `<span class="goal-ctl match-control" data-scope="${scope}" data-mi="${mi}" data-idx="${gi}" data-action="del" title="${t("deleteGoal")}">✕</span>`;
-  return `<div class="goal-line">⚽ ${p?p.name:"?"} — ${teamName} ${ctl}</div>`;
+  const match = scope==="history" ? matchHistory[mi] : matchState;
+  return `<div class="goal-line">⚽ ${p?p.name:"?"} — ${teamName}${goalTimeLabel(g,match)} ${ctl}</div>`;
 }
 function renderMatchHistory(){
   const wrap = document.getElementById("matchHistoryWrap");
@@ -2018,7 +2040,7 @@ function renderMatchHistory(){
       goalsHtml = m.goals.length ? m.goals.map(g=>{
         const p = allPlayers.find(x=>x.id===g.playerId);
         const teamName = g.team==="A" ? m.teamAName : m.teamBName;
-        return `⚽ ${p?p.name:"?"} (${teamName})`;
+        return `⚽ ${p?p.name:"?"} (${teamName})${goalTimeLabel(g,m)}`;
       }).join(" · ") : t("noGoals");
     }
     return `<div class="match-history-item">
@@ -2027,6 +2049,7 @@ function renderMatchHistory(){
         <span class="mh-date">${dateStr} <span class="mh-btn match-control" data-action="toggle-edit" data-mi="${mi}">✎ ${open?t("doneEditBtn"):t("editMatchBtn")}</span></span>
       </div>
       <div class="match-history-goals">${goalsHtml}</div>
+      <div class="mh-date">${LANG==="kk"?"Матч ұзақтығы":"Длительность матча"}: ${Number.isFinite(m.elapsedSec)?elapsedTime(m.elapsedSec):"—"}</div>
     </div>`;
   }).join("");
 }
@@ -2087,7 +2110,6 @@ function renderMatch(){
       ? `Порядок команд: ${tournament.draw.map((id,i)=>`${i+1}. ${teamName(id)}`).join(" → ")}\nМатч №${tournament.round}: ${tournament.playing.map(teamName).join(" — ")}\nОчередь выхода: ${tournament.waiting.map((id,i)=>`${i+1}. ${teamName(id)}`).join(" → ")}\nДо двух голов или окончания времени. При ничьей выходят две следующие команды.` : "";
     const pending = matchState.startedAt===null;
     document.getElementById("startQueuedMatchBtn").style.display = pending ? "inline-block" : "none";
-    document.getElementById("endTournamentBtn").style.display = pending && tournament ? "inline-block" : "none";
     document.getElementById("teamABtn").disabled = pending;
     document.getElementById("teamBBtn").disabled = pending;
     document.getElementById("finishMatchBtn").disabled = pending;
