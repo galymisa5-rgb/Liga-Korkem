@@ -411,7 +411,15 @@ input:focus,select:focus{outline:2px solid var(--turf);outline-offset:1px;}
 .match-history-item{
   background:var(--pitch-2);border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin-top:10px;
 }
-.match-history-head{display:flex;justify-content:space-between;align-items:center;font-family:'Bebas Neue',sans-serif;font-size:17px;}
+.match-history-head{display:flex;justify-content:space-between;align-items:center;font-family:'Bebas Neue',sans-serif;font-size:17px;gap:8px;flex-wrap:wrap;}
+.team-label{display:inline-flex;align-items:center;gap:6px;max-width:100%;vertical-align:middle;}
+.team-color-dot{display:inline-block;width:12px;height:12px;flex:none;border-radius:3px;border:1px solid rgba(255,255,255,.3);}
+#tournamentQueue{font-family:'Inter',system-ui,sans-serif;font-size:12px;line-height:1.5;color:var(--ink-dim);margin-bottom:12px;font-weight:400;overflow-wrap:anywhere;}
+@media (max-width:720px){
+  #tournamentQueue,body.referee-mode #matchContentMount #tournamentQueue{font-size:11px;line-height:1.45;text-align:left;}
+  #tournamentQueue .team-color-dot{width:10px;height:10px;}
+  .match-history-head{font-size:15px;}
+}
 .match-history-head .mh-date{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--ink-dim);}
 .match-history-goals{margin-top:6px;font-size:12px;color:var(--ink-dim);}
 .goal-ctl{margin-left:8px;cursor:pointer;font-size:13px;color:var(--ink-dim);padding:0 4px;}
@@ -629,7 +637,7 @@ footer.appfoot{text-align:center;color:var(--ink-dim);font-size:11.5px;margin-to
       </div>
 
       <div class="match-setup match-control" id="matchSetupBox">
-        <div class="eyebrow">Порядок команд — указывает судья</div>
+        <div class="eyebrow">Номера команд — указывает судья</div>
         <div id="tournamentOrderInputs" style="display:grid;gap:10px;width:100%;"></div>
         <div class="paste-hint">Проведите жеребьёвку на поле и укажите её результат вручную. Команды №1 и №2 играют первыми, №3 и №4 ждут своей очереди.</div>
         <button class="btn" id="confirmTournamentOrderBtn">✓ Сохранить порядок судьи</button>
@@ -652,7 +660,7 @@ footer.appfoot{text-align:center;color:var(--ink-dim);font-size:11.5px;margin-to
       </div>
 
       <div class="match-live" id="matchLive" style="display:none;">
-        <div id="tournamentQueue" style="font-size:12px;line-height:1.5;color:var(--ink-dim);margin-bottom:12px;"></div>
+        <div id="tournamentQueue"></div>
         <button class="btn match-control" id="startQueuedMatchBtn" style="display:none;">▶ Начать матч</button>
         <button class="btn ghost small match-control" id="endTournamentBtn" style="display:none;">Завершить турнир</button>
         <div class="match-timer" id="matchTimer">05:00</div>
@@ -1773,7 +1781,7 @@ function populateSavedTeamSelects(){
     const sel = document.getElementById("team"+side+"SavedSelect");
     const current = sel.value;
     sel.innerHTML = `<option value="">${t("customTeamOption")}</option>` +
-      namedTeams.map(tm=>`<option value="${tm.id}">${tm.flag} ${tm.name}</option>`).join("");
+      namedTeams.map(tm=>`<option value="${tm.id}">${teamColorEmoji(tm.color)} ${tm.flag} ${tm.name}</option>`).join("");
     if(namedTeams.some(tm=>tm.id===current)) sel.value = current;
   });
 }
@@ -1818,6 +1826,16 @@ function startMatch(){
 document.getElementById("startMatchBtn").addEventListener("click", startMatch);
 
 /* Tournament queue is saved with the match so every device sees the same order. */
+function escapeTeamText(value){
+  return String(value ?? "").replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
+}
+function teamLabelHtml(name,color){
+  const safeColor = /^#[\da-f]{3}(?:[\da-f]{3})?$/i.test(color || "") ? color : "#9db3a9";
+  return `<span class="team-label"><span class="team-color-dot" style="background:${safeColor}" aria-hidden="true"></span><span>${escapeTeamText(name)}</span></span>`;
+}
+function teamColorEmoji(color){
+  return Object.entries(COLOR_EMOJI_MAP).find(([emoji,hex])=>hex.toLowerCase()===String(color).toLowerCase())?.[0] || "◼";
+}
 function tournamentDeadline(now=Date.now()){
   const parts = new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Qyzylorda",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(now);
   const value = type=>parts.find(part=>part.type===type).value;
@@ -1857,7 +1875,7 @@ function renderTournamentOrderInputs(){
     namedTeams.forEach(team=>{
       const option = document.createElement("option");
       option.value = team.id;
-      option.textContent = `${team.flag || ""} ${team.name}`;
+      option.textContent = `${teamColorEmoji(team.color)} ${team.flag || ""} ${team.name}`;
       select.appendChild(option);
     });
     select.value = previous[i] || "";
@@ -2028,7 +2046,8 @@ function goalLineHtml(g, gi, teamName, scope, mi){
   const ctl = `<span class="goal-ctl match-control" data-scope="${scope}" data-mi="${mi}" data-idx="${gi}" data-action="change" title="${t("changeScorer")}">✎</span>`
             + `<span class="goal-ctl match-control" data-scope="${scope}" data-mi="${mi}" data-idx="${gi}" data-action="del" title="${t("deleteGoal")}">✕</span>`;
   const match = scope==="history" ? matchHistory[mi] : matchState;
-  return `<div class="goal-line">⚽ ${p?p.name:"?"} — ${teamName}${goalTimeLabel(g,match)} ${ctl}</div>`;
+  const color = g.team==="A" ? match?.teamAColor : match?.teamBColor;
+  return `<div class="goal-line">⚽ ${p?p.name:"?"} — ${teamLabelHtml(teamName,color)}${goalTimeLabel(g,match)} ${ctl}</div>`;
 }
 function renderMatchHistory(){
   const wrap = document.getElementById("matchHistoryWrap");
@@ -2049,12 +2068,12 @@ function renderMatchHistory(){
       goalsHtml = m.goals.length ? m.goals.map(g=>{
         const p = allPlayers.find(x=>x.id===g.playerId);
         const teamName = g.team==="A" ? m.teamAName : m.teamBName;
-        return `⚽ ${p?p.name:"?"} (${teamName})${goalTimeLabel(g,m)}`;
+        return `⚽ ${p?p.name:"?"} (${teamLabelHtml(teamName,g.team==="A"?m.teamAColor:m.teamBColor)})${goalTimeLabel(g,m)}`;
       }).join(" · ") : t("noGoals");
     }
     return `<div class="match-history-item">
       <div class="match-history-head">
-        <span>${m.teamAName} ${m.scoreA} - ${m.scoreB} ${m.teamBName}</span>
+        <span>${teamLabelHtml(m.teamAName,m.teamAColor)} ${m.scoreA} - ${m.scoreB} ${teamLabelHtml(m.teamBName,m.teamBColor)}</span>
         <span class="mh-date">${dateStr} <span class="mh-btn match-control" data-action="toggle-edit" data-mi="${mi}">✎ ${open?t("doneEditBtn"):t("editMatchBtn")}</span></span>
       </div>
       <div class="match-history-goals">${goalsHtml}</div>
@@ -2114,9 +2133,13 @@ function renderMatch(){
   document.getElementById("matchLive").style.display = hasMatch ? "block" : "none";
   if(hasMatch){
     const tournament = matchState.tournament;
-    const teamName = id=>namedTeams.find(team=>team.id===id)?.name || "Команда";
-    document.getElementById("tournamentQueue").textContent = tournament
-      ? `Матч №${tournament.round} · Следующие: ${tournament.waiting.map(teamName).join(" → ")}` : "";
+    const teamLabel = id=>{
+      const team = namedTeams.find(team=>team.id===id);
+      const number = tournament.draw.indexOf(id)+1;
+      return teamLabelHtml(`№${number} ${team?.name || "Команда"}`,team?.color);
+    };
+    document.getElementById("tournamentQueue").innerHTML = tournament
+      ? `Матч №${tournament.round} · Следующие: ${tournament.waiting.map(teamLabel).join(" → ")}` : "";
     const pending = matchState.startedAt===null;
     document.getElementById("startQueuedMatchBtn").style.display = pending ? "inline-block" : "none";
     document.getElementById("endTournamentBtn").style.display = tournament ? "inline-block" : "none";
