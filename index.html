@@ -652,8 +652,9 @@ footer.appfoot{text-align:center;color:var(--ink-dim);font-size:11.5px;margin-to
       </div>
 
       <div class="match-live" id="matchLive" style="display:none;">
-        <div id="tournamentQueue" style="white-space:pre-line;margin-bottom:18px;"></div>
+        <div id="tournamentQueue" style="font-size:12px;line-height:1.5;color:var(--ink-dim);margin-bottom:12px;"></div>
         <button class="btn match-control" id="startQueuedMatchBtn" style="display:none;">▶ Начать матч</button>
+        <button class="btn ghost small match-control" id="endTournamentBtn" style="display:none;">Завершить турнир</button>
         <div class="match-timer" id="matchTimer">05:00</div>
         <div class="match-scoreboard">
           <button class="match-team-btn match-control" id="teamABtn" data-team="A">
@@ -1742,13 +1743,15 @@ function renderNamedTeamsList(){
   block.style.display = "block";
   wrap.className = "teams-list-wrap-grid";
   wrap.innerHTML = namedTeams.map(team=>{
+    const drawIndex = matchState?.tournament?.draw.indexOf(team.id) ?? -1;
+    const orderBadge = drawIndex>=0 ? `<span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--gold);">№${drawIndex+1}</span> ` : "";
     const rosterHtml = team.players.map(pl=>{
       const p = allPlayers.find(x=>x.id===pl.playerId);
       const name = p ? p.name : "?";
       return `${pl.isCaptain?"<b>"+name+" (к)</b>":name}${pl.isReserve?" · "+t("reserve"):""}`;
     }).join(", ");
     return `<div class="tl-card">
-      <div class="tl-head"><span class="tl-color" style="background:${team.color}"></span>${team.flag} ${team.name}</div>
+      <div class="tl-head">${orderBadge}<span class="tl-color" style="background:${team.color}"></span>${team.flag} ${team.name}</div>
       <div class="tl-roster">${rosterHtml}</div>
       ${adminMode?`<div class="tl-del" data-id="${team.id}">✕ ${t("cancelBtn")}</div>`:""}
     </div>`;
@@ -1903,6 +1906,12 @@ document.getElementById("startQueuedMatchBtn").addEventListener("click", ()=>{
   if(!matchState || matchState.startedAt!==null || (!adminMode && !refereeMode)) return;
   matchState.startedAt = Date.now();
   saveMatchState(); renderMatch();
+});
+document.getElementById("endTournamentBtn").addEventListener("click", ()=>{
+  if(!matchState?.tournament || (!adminMode && !refereeMode)) return;
+  if(!confirm("Завершить турнир? Текущий матч и история сыгранных матчей сохранятся.")) return;
+  if(matchState.startedAt!==null) finishMatch(true,Date.now(),true);
+  else { matchState=null; saveMatchState(); renderMatch(); }
 });
 
 function tickMatch(){
@@ -2107,9 +2116,10 @@ function renderMatch(){
     const tournament = matchState.tournament;
     const teamName = id=>namedTeams.find(team=>team.id===id)?.name || "Команда";
     document.getElementById("tournamentQueue").textContent = tournament
-      ? `Порядок команд: ${tournament.draw.map((id,i)=>`${i+1}. ${teamName(id)}`).join(" → ")}\nМатч №${tournament.round}: ${tournament.playing.map(teamName).join(" — ")}\nОчередь выхода: ${tournament.waiting.map((id,i)=>`${i+1}. ${teamName(id)}`).join(" → ")}\nДо двух голов или окончания времени. При ничьей выходят две следующие команды.` : "";
+      ? `Матч №${tournament.round} · Следующие: ${tournament.waiting.map(teamName).join(" → ")}` : "";
     const pending = matchState.startedAt===null;
     document.getElementById("startQueuedMatchBtn").style.display = pending ? "inline-block" : "none";
+    document.getElementById("endTournamentBtn").style.display = tournament ? "inline-block" : "none";
     document.getElementById("teamABtn").disabled = pending;
     document.getElementById("teamBBtn").disabled = pending;
     document.getElementById("finishMatchBtn").disabled = pending;
