@@ -629,6 +629,7 @@ footer.appfoot{text-align:center;color:var(--ink-dim);font-size:11.5px;margin-to
       </div>
 
       <div class="match-setup match-control" id="matchSetupBox">
+        <button class="btn" id="drawTournamentBtn">🎲 Жеребьёвка и очередь команд</button>
         <div class="eyebrow" id="t_matchSetupLabel">Новый матч</div>
         <div class="match-setup-row">
           <select id="teamASavedSelect" style="min-width:150px;"></select>
@@ -648,6 +649,9 @@ footer.appfoot{text-align:center;color:var(--ink-dim);font-size:11.5px;margin-to
       </div>
 
       <div class="match-live" id="matchLive" style="display:none;">
+        <div id="tournamentQueue" style="white-space:pre-line;margin-bottom:18px;"></div>
+        <button class="btn match-control" id="startQueuedMatchBtn" style="display:none;">▶ Начать следующий матч</button>
+        <button class="btn ghost small match-control" id="endTournamentBtn" style="display:none;">Закончить турнир</button>
         <div class="match-timer" id="matchTimer">05:00</div>
         <div class="match-scoreboard">
           <button class="match-team-btn match-control" id="teamABtn" data-team="A">
@@ -1696,6 +1700,7 @@ document.getElementById("parseTeamsBtn").addEventListener("click", ()=>{
   renderTeamsPastePreview(parseTeamsBlock(text));
 });
 function applyParsedTeams(teams){
+  if(matchState?.tournament){ alert("Завершите турнир перед изменением составов."); return; }
   const wrap = document.getElementById("teamsPastePreview");
   let addedCustom = false;
   teams.forEach((team,ti)=>{
@@ -1749,6 +1754,7 @@ function renderNamedTeamsList(){
   if(adminMode){
     wrap.querySelectorAll(".tl-del").forEach(el=>{
       el.addEventListener("click", ()=>{
+        if(matchState?.tournament){ alert("Завершите турнир перед удалением команды."); return; }
         namedTeams = namedTeams.filter(t2=>t2.id!==el.dataset.id);
         saveNamedTeams();
         renderNamedTeamsList();
@@ -1792,6 +1798,7 @@ function renderSwatchesInline(){
   });
 }
 function startMatch(){
+  if(matchState || (!adminMode && !refereeMode)) return;
   const nameA = document.getElementById("teamAName").value.trim() || "A";
   const nameB = document.getElementById("teamBName").value.trim() || "B";
   const durMin = Math.max(1, Number(document.getElementById("matchDuration").value)||5);
@@ -1805,17 +1812,66 @@ function startMatch(){
 }
 document.getElementById("startMatchBtn").addEventListener("click", startMatch);
 
+/* Tournament queue is saved with the match so every device sees the same order. */
+function queuedMatch(tournament, durationSec){
+  const [a,b] = tournament.playing.map(id=>namedTeams.find(team=>team.id===id));
+  if(!a || !b) return null;
+  return {teamAName:a.name,teamAColor:a.color,teamAId:a.id,
+    teamBName:b.name,teamBColor:b.color,teamBId:b.id,
+    durationSec,startedAt:null,scoreA:0,scoreB:0,goals:[],timeUp:false,tournament};
+}
+function advanceTournament(finished){
+  if(!finished.tournament) return null;
+  const tournament = JSON.parse(JSON.stringify(finished.tournament));
+  const [a,b] = tournament.playing;
+  if(finished.scoreA===finished.scoreB){
+    tournament.waiting.push(a,b);
+    tournament.playing = tournament.waiting.splice(0,2);
+  }else{
+    const winner = finished.scoreA>finished.scoreB ? a : b;
+    const loser = winner===a ? b : a;
+    tournament.waiting.push(loser);
+    tournament.playing = [winner,tournament.waiting.shift()];
+  }
+  tournament.round++;
+  return queuedMatch(tournament,finished.durationSec);
+}
+document.getElementById("drawTournamentBtn").addEventListener("click", ()=>{
+  if(matchState || (!adminMode && !refereeMode)) return;
+  if(namedTeams.length<4){ alert("Для очереди с заменой двух команд нужны минимум 4 команды. Добавьте составы."); return; }
+  const order = namedTeams.map(team=>team.id);
+  for(let i=order.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [order[i],order[j]] = [order[j],order[i]];
+  }
+  const durationSec = clamp(Number(document.getElementById("matchDuration").value)||5,1,60)*60;
+  matchState = queuedMatch({draw:order.slice(),playing:order.slice(0,2),waiting:order.slice(2),round:1},durationSec);
+  saveMatchState(); renderMatch();
+});
+document.getElementById("startQueuedMatchBtn").addEventListener("click", ()=>{
+  if(!matchState || matchState.startedAt!==null || (!adminMode && !refereeMode)) return;
+  matchState.startedAt = Date.now();
+  saveMatchState(); renderMatch();
+});
+document.getElementById("endTournamentBtn").addEventListener("click", ()=>{
+  if(!matchState?.tournament || matchState.startedAt!==null || (!adminMode && !refereeMode)) return;
+  if(!confirm("Закончить турнир? История сыгранных матчей сохранится.")) return;
+  matchState = null;
+  saveMatchState(); renderMatch();
+});
+
 function tickMatch(){
   if(!matchState) return;
   const el = document.getElementById("matchTimer");
   if(!el) return;
-  const elapsed = Math.floor((Date.now()-matchState.startedAt)/1000);
+  const elapsed = matchState.startedAt===null ? 0 : Math.floor((Date.now()-matchState.startedAt)/1000);
   let remaining = matchState.durationSec - elapsed;
   if(remaining<=0){ remaining=0; matchState.timeUp = true; }
   const mm = String(Math.floor(remaining/60)).padStart(2,"0");
   const ss = String(remaining%60).padStart(2,"0");
   el.textContent = `${mm}:${ss}`;
   el.classList.toggle("time-up", !!matchState.timeUp);
+  if(remaining===0 && matchState.tournament && (adminMode || refereeMode)) finishMatch(true);
 }
 let goalEditCtx = null; // null = add live goal | {scope:"live",index} | {scope:"history",matchIdx,index|null}
 const historyEditOpen = new Set();
@@ -1860,6 +1916,7 @@ document.getElementById("scorerSearch").addEventListener("input",(e)=>renderScor
 document.getElementById("scorerCancelBtn").addEventListener("click", closeScorerModal);
 function confirmGoal(playerId){
   const ctx = goalEditCtx;
+  if(!ctx && matchState?.startedAt===null){ closeScorerModal(); return; }
   if(ctx && ctx.scope==="history"){
     const m = matchHistory[ctx.matchIdx];
     if(m){
@@ -1893,6 +1950,7 @@ document.getElementById("teamBBtn").addEventListener("click", ()=>openScorerModa
 
 function finishMatch(automatic=false){
   if(!matchState) return;
+  if(matchState.startedAt===null) return;
   if(automatic!==true && !confirm(t("finishConfirm"))) return;
   recomputeScores(matchState);
   matchHistory.unshift({
@@ -1902,7 +1960,7 @@ function finishMatch(automatic=false){
     scoreA: matchState.scoreA, scoreB: matchState.scoreB,
     goals: matchState.goals, finishedAt: Date.now()
   });
-  matchState = null;
+  matchState = advanceTournament(matchState);
   saveMatchState();
   saveMatchHistory();
   renderMatch();
@@ -1996,6 +2054,16 @@ function renderMatch(){
   document.getElementById("matchSetupBox").style.display = hasMatch ? "none" : "flex";
   document.getElementById("matchLive").style.display = hasMatch ? "block" : "none";
   if(hasMatch){
+    const tournament = matchState.tournament;
+    const teamName = id=>namedTeams.find(team=>team.id===id)?.name || "Команда";
+    document.getElementById("tournamentQueue").textContent = tournament
+      ? `Жеребьёвка: ${tournament.draw.map((id,i)=>`${i+1}. ${teamName(id)}`).join(" → ")}\nМатч №${tournament.round}: ${tournament.playing.map(teamName).join(" — ")}\nОчередь выхода: ${tournament.waiting.map((id,i)=>`${i+1}. ${teamName(id)}`).join(" → ")}\nДо двух голов или окончания времени. При ничьей выходят две следующие команды.` : "";
+    const pending = matchState.startedAt===null;
+    document.getElementById("startQueuedMatchBtn").style.display = pending ? "inline-block" : "none";
+    document.getElementById("endTournamentBtn").style.display = pending && tournament ? "inline-block" : "none";
+    document.getElementById("teamABtn").disabled = pending;
+    document.getElementById("teamBBtn").disabled = pending;
+    document.getElementById("finishMatchBtn").disabled = pending;
     document.getElementById("dotTeamA").style.background = matchState.teamAColor;
     document.getElementById("dotTeamB").style.background = matchState.teamBColor;
     document.getElementById("nameTeamA").textContent = matchState.teamAName;
