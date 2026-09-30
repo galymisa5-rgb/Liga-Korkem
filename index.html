@@ -1878,6 +1878,11 @@ function confirmGoal(playerId){
     const elapsed = Math.floor((Date.now()-matchState.startedAt)/1000);
     matchState.goals.push({team:currentGoalTeam, playerId, atSec:elapsed});
     recomputeScores(matchState);
+    if(matchState.scoreA>=2 || matchState.scoreB>=2){
+      closeScorerModal();
+      finishMatch(true);
+      return;
+    }
     saveMatchState();
   }
   closeScorerModal();
@@ -1886,9 +1891,9 @@ function confirmGoal(playerId){
 document.getElementById("teamABtn").addEventListener("click", ()=>openScorerModal("A"));
 document.getElementById("teamBBtn").addEventListener("click", ()=>openScorerModal("B"));
 
-function finishMatch(){
+function finishMatch(automatic=false){
   if(!matchState) return;
-  if(!confirm(t("finishConfirm"))) return;
+  if(automatic!==true && !confirm(t("finishConfirm"))) return;
   recomputeScores(matchState);
   matchHistory.unshift({
     id: Date.now(),
@@ -1902,7 +1907,7 @@ function finishMatch(){
   saveMatchHistory();
   renderMatch();
 }
-document.getElementById("finishMatchBtn").addEventListener("click", finishMatch);
+document.getElementById("finishMatchBtn").addEventListener("click", ()=>finishMatch());
 
 function goalLineHtml(g, gi, teamName, scope, mi){
   const p = allPlayers.find(x=>x.id===g.playerId);
