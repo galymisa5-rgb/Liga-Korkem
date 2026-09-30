@@ -629,10 +629,10 @@ footer.appfoot{text-align:center;color:var(--ink-dim);font-size:11.5px;margin-to
       </div>
 
       <div class="match-setup match-control" id="matchSetupBox">
-        <div class="eyebrow">Судья назначает порядок команд перед первой игрой</div>
+        <div class="eyebrow">Порядок команд — указывает судья</div>
         <div id="tournamentOrderInputs" style="display:grid;gap:10px;width:100%;"></div>
-        <div class="paste-hint">Команды №1 и №2 играют первыми. №3 и №4 ждут своей очереди.</div>
-        <button class="btn" id="drawTournamentBtn">✓ Подтвердить порядок команд</button>
+        <div class="paste-hint">Проведите жеребьёвку на поле и укажите её результат вручную. Команды №1 и №2 играют первыми, №3 и №4 ждут своей очереди.</div>
+        <button class="btn" id="confirmTournamentOrderBtn">✓ Сохранить порядок судьи</button>
         <div class="eyebrow" id="t_matchSetupLabel">Новый матч</div>
         <div class="match-setup-row">
           <select id="teamASavedSelect" style="min-width:150px;"></select>
@@ -1863,7 +1863,7 @@ function advanceTournament(finished){
   tournament.round++;
   return queuedMatch(tournament,finished.durationSec);
 }
-document.getElementById("drawTournamentBtn").addEventListener("click", ()=>{
+document.getElementById("confirmTournamentOrderBtn").addEventListener("click", ()=>{
   if(matchState || (!adminMode && !refereeMode)) return;
   if(namedTeams.length<4){ alert("Для очереди с заменой двух команд нужны минимум 4 команды. Добавьте составы."); return; }
   const order = namedTeams.map((team,i)=>document.getElementById("tournamentOrder"+i).value);
