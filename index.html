@@ -629,7 +629,10 @@ footer.appfoot{text-align:center;color:var(--ink-dim);font-size:11.5px;margin-to
       </div>
 
       <div class="match-setup match-control" id="matchSetupBox">
-        <button class="btn" id="drawTournamentBtn">🎲 Жеребьёвка и очередь команд</button>
+        <div class="eyebrow">Судья назначает порядок команд перед первой игрой</div>
+        <div id="tournamentOrderInputs" style="display:grid;gap:10px;width:100%;"></div>
+        <div class="paste-hint">Команды №1 и №2 играют первыми. №3 и №4 ждут своей очереди.</div>
+        <button class="btn" id="drawTournamentBtn">✓ Подтвердить порядок команд</button>
         <div class="eyebrow" id="t_matchSetupLabel">Новый матч</div>
         <div class="match-setup-row">
           <select id="teamASavedSelect" style="min-width:150px;"></select>
@@ -1813,6 +1816,30 @@ function startMatch(){
 document.getElementById("startMatchBtn").addEventListener("click", startMatch);
 
 /* Tournament queue is saved with the match so every device sees the same order. */
+function renderTournamentOrderInputs(){
+  const wrap = document.getElementById("tournamentOrderInputs");
+  const previous = Array.from(wrap.querySelectorAll("select"), select=>select.value);
+  wrap.replaceChildren();
+  for(let i=0;i<namedTeams.length;i++){
+    const label = document.createElement("label");
+    label.textContent = `Команда №${i+1} `;
+    const select = document.createElement("select");
+    select.id = "tournamentOrder"+i;
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = "Выберите команду";
+    select.appendChild(placeholder);
+    namedTeams.forEach(team=>{
+      const option = document.createElement("option");
+      option.value = team.id;
+      option.textContent = `${team.flag || ""} ${team.name}`;
+      select.appendChild(option);
+    });
+    select.value = previous[i] || "";
+    label.appendChild(select);
+    wrap.appendChild(label);
+  }
+}
 function queuedMatch(tournament, durationSec){
   const [a,b] = tournament.playing.map(id=>namedTeams.find(team=>team.id===id));
   if(!a || !b) return null;
@@ -1839,10 +1866,9 @@ function advanceTournament(finished){
 document.getElementById("drawTournamentBtn").addEventListener("click", ()=>{
   if(matchState || (!adminMode && !refereeMode)) return;
   if(namedTeams.length<4){ alert("Для очереди с заменой двух команд нужны минимум 4 команды. Добавьте составы."); return; }
-  const order = namedTeams.map(team=>team.id);
-  for(let i=order.length-1;i>0;i--){
-    const j = Math.floor(Math.random()*(i+1));
-    [order[i],order[j]] = [order[j],order[i]];
+  const order = namedTeams.map((team,i)=>document.getElementById("tournamentOrder"+i).value);
+  if(order.some(id=>!namedTeams.some(team=>team.id===id)) || new Set(order).size!==namedTeams.length){
+    alert("Назначьте каждую команду на одно место: 1, 2, 3, 4. Команды не должны повторяться."); return;
   }
   const durationSec = clamp(Number(document.getElementById("matchDuration").value)||5,1,60)*60;
   matchState = queuedMatch({draw:order.slice(),playing:order.slice(0,2),waiting:order.slice(2),round:1},durationSec);
@@ -2047,6 +2073,7 @@ document.getElementById("matchContent").addEventListener("click",(e)=>{
 });
 
 function renderMatch(){
+  renderTournamentOrderInputs();
   renderSwatchesInline();
   renderNamedTeamsList();
   populateSavedTeamSelects();
@@ -2057,7 +2084,7 @@ function renderMatch(){
     const tournament = matchState.tournament;
     const teamName = id=>namedTeams.find(team=>team.id===id)?.name || "Команда";
     document.getElementById("tournamentQueue").textContent = tournament
-      ? `Жеребьёвка: ${tournament.draw.map((id,i)=>`${i+1}. ${teamName(id)}`).join(" → ")}\nМатч №${tournament.round}: ${tournament.playing.map(teamName).join(" — ")}\nОчередь выхода: ${tournament.waiting.map((id,i)=>`${i+1}. ${teamName(id)}`).join(" → ")}\nДо двух голов или окончания времени. При ничьей выходят две следующие команды.` : "";
+      ? `Порядок команд: ${tournament.draw.map((id,i)=>`${i+1}. ${teamName(id)}`).join(" → ")}\nМатч №${tournament.round}: ${tournament.playing.map(teamName).join(" — ")}\nОчередь выхода: ${tournament.waiting.map((id,i)=>`${i+1}. ${teamName(id)}`).join(" → ")}\nДо двух голов или окончания времени. При ничьей выходят две следующие команды.` : "";
     const pending = matchState.startedAt===null;
     document.getElementById("startQueuedMatchBtn").style.display = pending ? "inline-block" : "none";
     document.getElementById("endTournamentBtn").style.display = pending && tournament ? "inline-block" : "none";
