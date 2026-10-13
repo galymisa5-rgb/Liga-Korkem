@@ -1,0 +1,97 @@
+/* Liga Körkem — stadium blue, player portraits, matchday typography. */
+:root{--pitch-0:#060f24;--pitch-1:#0b1b38;--pitch-2:#102b50;--line:#254466;--turf:#cef35c;--turf-bright:#defa86;--gold:#cef35c;--gold-dim:#6c8538;--ink:#f5f8ff;--ink-dim:#a8bbd5;--cyan:#67d9ed;--card-radius:12px;--shadow:0 20px 60px -30px #000}
+body{background:radial-gradient(ellipse at 85% 0,#123862 0,transparent 45%),var(--pitch-0);font-family:Inter,system-ui,sans-serif}
+body>.wrap{max-width:1320px;display:flex;flex-direction:column;padding:0 36px}
+.topbar{order:-3;padding:20px 0;border-bottom:1px solid var(--line);gap:12px}
+.topbar::before{content:'LIGA KÖRKEM';margin-right:auto;font-size:18px;font-weight:800;letter-spacing:-.04em;color:var(--ink)}
+.viewer-badge,.lang-toggle{font-family:inherit;font-size:11px;background:transparent;border-color:var(--line)}
+.league-brand{order:-2;justify-content:flex-start;margin:24px 0 16px;gap:16px}
+.league-line{display:none}
+.league-name{text-shadow:none;text-align:left;display:flex;align-items:center;gap:16px;white-space:normal}
+.league-logo{width:64px;height:64px;object-fit:cover;border-radius:50%;border:2px solid var(--line);box-shadow:none}
+.league-name small{font-family:inherit;font-size:12px;letter-spacing:0;text-transform:none;margin:0;color:var(--ink-dim)}
+.hero{order:-1;padding:0 0 24px}
+.ticket{min-height:400px;grid-template-columns:minmax(0,1.65fr) 1px minmax(260px,1fr);border-radius:18px;border:1px solid #42678c;background:linear-gradient(110deg,#08204a 0%,#123c73 55%,#07536a 100%);box-shadow:var(--shadow)}
+.ticket::before{inset:0 0 0 35%;background:linear-gradient(90deg,#123c7300,#153e7330),url('pitch.svg') center/cover no-repeat;opacity:.45}
+.ticket-main{padding:42px 40px;align-self:center}
+.eyebrow{font-family:inherit;letter-spacing:0;text-transform:none;font-size:12px;font-weight:600;color:var(--ink-dim)}
+.ticket-main .title{font-family:Inter,system-ui,sans-serif;font-size:clamp(50px,6.5vw,90px);font-weight:800;letter-spacing:-.07em;line-height:1.02;margin:16px 0}
+.ticket-main .title em{display:inline-block;font-size:.53em;letter-spacing:-.035em;color:var(--ink)}
+.ticket-sub{max-width:48ch;font-size:13px;line-height:1.7;color:#c4d6ed}
+.ticket-divider{background:#ffffff20;margin:40px 0}
+.ticket-side{position:relative;padding:40px 32px;gap:20px;z-index:1}
+.countdown{gap:16px}
+.cd-box{background:transparent;border:0;border-bottom:2px solid #ffffff35;border-radius:0;padding:0 0 16px;text-align:left}
+.cd-box .num{font-family:Inter,system-ui,sans-serif;font-size:clamp(36px,4vw,56px);font-weight:700;letter-spacing:-.06em;color:var(--turf)}
+.cd-box .lab{font-size:11px;letter-spacing:0;text-transform:none;color:#c4d6ed}
+.venue-line{display:flex;justify-content:space-between;gap:10px;padding-bottom:12px;border-bottom:1px solid #ffffff20;font-size:12px}
+.reminder{padding:12px 0 0;margin-top:20px;border:0;border-radius:0;background:transparent;font-size:11px;line-height:1.6;max-width:50ch}
+.reminder b{font-family:inherit}.reminder .dot{width:6px;height:6px;box-shadow:none}
+.conn-warning{font-size:12px;line-height:1.5;background:#391f2d}
+.bday-block{display:grid;grid-template-columns:180px minmax(0,1fr) minmax(0,1fr);align-items:center;gap:24px;border-block:1px solid var(--line);padding:18px 0;margin:0 0 24px}
+.bday-featured{margin:0;background:transparent;border:0;padding:0;box-shadow:none}
+.bday-photo{width:52px;height:52px;border-radius:50%;border-color:var(--line)}
+.bday-list{margin:0}.bday-name{font-family:inherit;font-weight:700;font-size:16px}.bday-sub{font-size:11px}
+.tabbar{position:sticky;top:0;z-index:10;display:flex;gap:4px;padding:10px 0;margin:0 0 32px;border:0;border-bottom:1px solid var(--line);border-radius:0;background:#060f24f5;backdrop-filter:blur(16px);overflow-x:auto;flex-wrap:nowrap}
+.tabbtn{font-family:inherit;font-size:12px;white-space:nowrap;border-radius:6px;padding:13px 18px;color:var(--ink-dim)}
+.tabbtn.active{background:var(--turf);color:#122034}
+.section-head{margin-bottom:20px}.section-head h2{font-family:inherit;font-size:clamp(24px,3vw,36px);font-weight:700;letter-spacing:-.05em}.section-head .count{font-family:inherit;font-size:12px}
+.stat-legend{gap:16px;margin-bottom:24px}.stat-legend .sl-chip{background:transparent;border:0;padding:0;font-family:inherit;font-size:11px;color:var(--ink-dim)}
+.cards-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:20px}
+.fcard{clip-path:none;aspect-ratio:3/4.4;border-radius:10px;border:1px solid #31547f;filter:none;background:var(--pitch-1);transition:border-color .2s}
+.fcard:hover{border-color:var(--cyan)}
+.tier-gold .fcard-shape{background:radial-gradient(ellipse at 50% 30%,#265aad,transparent 75%),#0c2148}
+.tier-silver .fcard-shape{background:radial-gradient(ellipse at 50% 30%,#22638b,transparent 75%),#0a263f}
+.tier-bronze .fcard-shape{background:radial-gradient(ellipse at 50% 30%,#364d85,transparent 75%),#13223e}
+.fcard-shape::before{background:linear-gradient(140deg,transparent 55%,#ffffff05 55%,#ffffff05 70%,transparent 70%);mix-blend-mode:normal}
+.fcard-shape::after{display:none}
+.fcard-content{padding:clamp(6px,2.5cqw,10px) 18px 18px}
+.ovr2{font-family:Inter,system-ui,sans-serif;font-weight:800;font-size:clamp(18px,9cqw,32px);line-height:1;color:var(--ink);letter-spacing:-.05em}
+.fcard-topright{flex-direction:row;align-items:center;gap:6px}
+.postag{font-family:inherit;color:var(--ink-dim);font-size:10px;border-color:#ffffff25;margin-top:8px}
+.ovr-bonus{top:0;color:var(--turf);background:#26486a;font-size:clamp(8px,3cqw,10px);line-height:1.2}
+.clubbadge{color:var(--ink);background:#ffffff10;border-color:#ffffff25}
+.age-badge{color:var(--ink-dim);background:#ffffff0c;border-color:#ffffff25;font-family:inherit;font-size:11px}
+.fcard-photo-wrap{left:0;right:0;top:14%;bottom:29%}
+.fcard-photo-img{object-position:center 15%;mask-image:linear-gradient(to bottom,#000 65%,transparent 100%);-webkit-mask-image:linear-gradient(to bottom,#000 65%,transparent 100%)}
+.fcard-photo-placeholder{font-size:76px;opacity:.15}
+.fcard-bottom{text-align:left}
+.fcard-name2{font-family:Inter,system-ui,sans-serif;font-weight:800;color:var(--ink);font-size:clamp(15px,7cqw,23px);letter-spacing:-.04em;white-space:normal;line-height:1.12;min-height:2.24em;border-color:#ffffff25;padding-bottom:10px;margin-bottom:12px;overflow-wrap:anywhere}
+.fcard-stats2{justify-content:space-between;gap:8px}.stat-col2{font-family:inherit;color:#c7d8ef;font-size:clamp(9px,3.8cqw,12px);gap:5px}.stat-col2 b{font-family:inherit;color:var(--ink);font-size:1.05em}.stat-divider2{background:#ffffff20}
+.btn{font-family:inherit;border-radius:6px;font-weight:600;color:#122034}.btn.ghost{color:var(--ink)}.btn.ghost:hover{background:#ffffff08}
+input[type=text],input[type=number],input[type=search],input[type=date],select,textarea{font-family:inherit;background:var(--pitch-1);color:var(--ink);border:1px solid var(--line);border-radius:6px}
+.match-live,.award-block,.finance-balance,.pay-stat,.rules-document,.tl-card{background:linear-gradient(120deg,#102b50,#0b1b38);border-radius:12px;border-color:var(--line)}
+.finance-balance-n,.match-timer,.match-score{font-family:Inter,system-ui,sans-serif;font-weight:800;letter-spacing:-.06em}
+.pay-table th{background:var(--pitch-2)}.pay-table td{padding:14px 12px}
+footer.appfoot{font-family:inherit;font-size:11px;line-height:1.7;padding-top:24px;border-top:1px solid var(--line)}
+:focus-visible{outline:2px solid var(--cyan);outline-offset:4px}
+@media(min-width:1500px){.cards-grid{grid-template-columns:repeat(5,minmax(0,1fr))}}
+@media(max-width:1000px){body>.wrap{padding:0 24px}.cards-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.ticket-main{padding:32px 28px}.ticket-side{padding:32px 24px}.bday-block{grid-template-columns:150px 1fr}.bday-list{grid-column:2}}
+@media(max-width:720px){body>.wrap{padding:0 16px}.topbar{gap:8px;padding:14px 0}.topbar::before{width:100%;font-size:20px;margin-bottom:4px}.topbar .btn{font-size:10px;padding:7px 9px}.viewer-badge{font-size:10px}.league-brand{margin:18px 0}.league-logo{width:48px;height:48px}.league-name small{font-size:11px}.ticket{grid-template-columns:1fr;min-height:0}.ticket::before{inset:0;opacity:.2}.ticket-main{padding:28px 24px}.ticket-main .title{font-size:62px}.ticket-divider{display:none}.ticket-side{padding:24px;border-top:1px solid #ffffff25;gap:14px}.countdown{max-width:360px}.cd-box .num{font-size:40px}.bday-block{grid-template-columns:1fr;gap:12px;padding:18px 0}.bday-list{grid-column:auto}.tabbar{margin-bottom:24px}.tabbtn{padding:11px 14px}.cards-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.fcard-content{padding:14px 12px}.fcard-name2{font-size:clamp(14px,7cqw,23px)}.stat-col2{font-size:clamp(9px,4cqw,12px)}.stat-legend{gap:10px}.pay-summary{gap:10px}.pay-stat{min-width:0;flex:1;padding:14px 12px}.panel{min-width:0}.pay-table{font-size:11px}.pay-table td,.pay-table th{padding:10px 5px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+.ticket-logo{display:none}
+.fcard{perspective:1200px}
+.fcard-front{position:absolute;inset:0;cursor:pointer;backface-visibility:hidden;transition:transform .45s ease}
+.fcard-front .fcard-content{padding-bottom:46px}
+.fcard-back{position:absolute;inset:0;padding:16px 14px 48px;background:linear-gradient(145deg,#143868,#081a37);color:var(--ink);overflow:hidden;animation:story-turn .45s ease;backface-visibility:hidden}
+.fcard-back[hidden]{display:none}
+.is-flipped .fcard-front{transform:rotateY(-180deg);pointer-events:none}
+.story-scroll{height:100%;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#547397 transparent;padding-right:4px}
+.story-source{display:block;font-size:10px;line-height:1.5;color:var(--turf)}
+.fcard-back h3{font-family:inherit;font-size:clamp(17px,8cqw,25px);letter-spacing:-.035em;line-height:1.15;margin:10px 0 4px;overflow-wrap:anywhere}
+.story-title{font-size:12px;color:var(--cyan);margin:0 0 16px}
+.fcard-back section{border-top:1px solid #ffffff20;padding:10px 0}
+.fcard-back h4{font-size:12px;line-height:1.4;margin:0 0 5px}
+.fcard-back section p{font-size:12px;line-height:1.65;margin:0;color:#c7d8ef}
+.card-flip-toggle{position:absolute;bottom:0;left:0;right:0;width:100%;z-index:3;border:0;border-top:1px solid #ffffff25;background:#071a35;color:var(--turf);font-family:inherit;font-size:11px;font-weight:600;min-height:36px;cursor:pointer}
+.card-flip-toggle:hover{background:#183b63}.card-flip-toggle:focus-visible{outline-offset:-4px}
+@keyframes story-turn{from{transform:rotateY(180deg)}to{transform:rotateY(0)}}
+@media(max-width:720px){
+  .league-brand{display:none}
+  .hero{padding-top:18px}
+  .ticket-main{padding-top:24px}
+  .ticket-logo{display:block;position:absolute;right:20px;top:20px;width:90px;height:90px;object-fit:cover;border-radius:50%;border:2px solid #ffffff70;box-shadow:0 8px 24px #0003}
+  .ticket-main>.eyebrow{max-width:calc(100% - 100px);min-height:90px;display:flex;align-items:flex-start;padding-top:6px;line-height:1.5}
+  .ticket-main .title{margin-top:12px}
+  .fcard-content{padding-top:clamp(6px,2.5cqw,10px)}
+}
