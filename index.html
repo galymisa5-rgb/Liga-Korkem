@@ -1319,6 +1319,7 @@ function awardBonus(playerId){
   return Math.round(Math.min(total, 12)); // cap the total boost so it can't be absurd
 }
 function generateStats(p){
+  applyPlayerProfile(p);
   const rng = mulberry32(hashStr(p.name+p.id));
   const age = ageFrom(p.birth) ?? 30;
   let base;
@@ -1398,7 +1399,7 @@ async function loadState(){
   if(namedTeamsVal){ try{ namedTeams = JSON.parse(namedTeamsVal) || []; }catch(e){} }
 
   allPlayers = [...PLAYERS, ...customPlayers];
-  allPlayers.forEach(p=>{ if(!countryMap[p.id]) countryMap[p.id]=defaultCountry(p); });
+  allPlayers.forEach(p=>{ applyPlayerProfile(p); if(!countryMap[p.id]) countryMap[p.id]=defaultCountry(p); });
 
   // photos + award votes: fetch in parallel too
   const photoListRes = await (async()=>{ try{ return await storageList("photo:", true); }catch(e){ return null; } })();
