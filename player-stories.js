@@ -78,21 +78,25 @@
     }));
     portraitCache.get(original).then(src=>{image.src=src;});
   }
+  window.getPlayerStory = player => {
+    const saved=window.getSavedPlayerDescription?.(player.id);
+    if(saved)return {content:[...saved.content],isAi:saved.is_ai};
+    const name=player.name.trim(),story=stories[aliases[name]||name];
+    const seed=[...name].reduce((sum,c)=>sum+c.codePointAt(0),0),sketch=sketches[seed%sketches.length];
+    return {content:story?[...story]:[sketch[0],'Игровой образ',sketch[1],'Футбольная шутка',sketch[2],'О профиле','Это вымышленная зарисовка, а не факт о человеке. Добавим настоящую историю, когда команда расскажет.'],isAi:!story};
+  };
   window.decoratePlayerCard = (card, player, lang) => {
     const portrait=card.querySelector('.fcard-photo-img');
     if(portrait){if(portrait.complete)clearWhiteBackdrop(portrait);else portrait.addEventListener('load',()=>clearWhiteBackdrop(portrait),{once:true});}
     const kk = lang === 'kk';
-    const story = stories[aliases[player.name] || player.name];
-    const seed = [...player.name].reduce((sum,c)=>sum+c.codePointAt(0),0);
-    const sketch = sketches[seed % sketches.length];
-    const content = story || [sketch[0], 'Игровой образ', sketch[1], 'Футбольная шутка', sketch[2], 'О профиле', 'Это вымышленная зарисовка, а не факт о человеке. Добавим настоящую историю, когда команда расскажет.'];
+    const {content,isAi} = window.getPlayerStory(player);
     const front = document.createElement('div');
     front.className = 'fcard-front';
     while(card.firstChild) front.appendChild(card.firstChild);
     const back = document.createElement('div');
     back.className = 'fcard-back';
     back.hidden = true;
-    back.innerHTML = `<div class="story-scroll"><span class="story-source">${story ? (kk?'Командадан әңгіме':'История от команды') : (kk?'Придумано ИИ · ойдан шығарылған':'Придумано ИИ · вымышленный образ')}</span><h3>${escape(player.name)}</h3><p class="story-title">${escape(content[0])}</p>${[1,3,5].map(i=>`<section><h4>${escape(content[i])}</h4><p>${escape(content[i+1])}</p></section>`).join('')}</div>`;
+    back.innerHTML = `<div class="story-scroll"><span class="story-source">${!isAi ? (kk?'Командадан әңгіме':'История от команды') : (kk?'Придумано ИИ · ойдан шығарылған':'Придумано ИИ · вымышленный образ')}</span><h3>${escape(player.name)}</h3><p class="story-title">${escape(content[0])}</p>${[1,3,5].filter(i=>content[i]||content[i+1]).map(i=>`<section><h4>${escape(content[i])}</h4><p>${escape(content[i+1])}</p></section>`).join('')}</div>`;
     const details=profileDetails[aliases[player.name.trim()]||player.name.trim()];
     if(details){
       const born=new Date(details.birth+'T12:00:00'),today=new Date();

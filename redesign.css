@@ -112,6 +112,31 @@ footer.appfoot{font-family:inherit;font-size:11px;line-height:1.7;padding-top:24
 .player-video-choices button{min-height:44px;padding:10px 14px;border:1px solid var(--line);border-radius:6px;background:transparent;color:var(--ink);font:12px Inter,system-ui,sans-serif;cursor:pointer}
 .player-video-choices button[aria-pressed=true]{background:var(--turf);border-color:var(--turf);color:#122034}
 .video-error{font-size:13px;line-height:1.6;color:#ffc4b9}
+.video-upload-dialog{width:min(540px,calc(100% - 24px))}
+.video-upload-dialog fieldset{margin:0 0 16px;padding:0;border:0;display:flex;flex-direction:column;gap:14px;min-width:0}
+.video-upload-dialog label{display:flex;flex-direction:column;gap:7px;font-size:13px;line-height:1.5}
+.video-upload-dialog input,.video-upload-dialog select{width:100%;min-height:44px;font-size:16px;border:1px solid var(--line);border-radius:6px;padding:10px;background:var(--pitch-1);color:var(--ink)}
+.upload-intro,.upload-hint,.upload-status{font-size:12px;line-height:1.7;color:var(--ink-dim)}
+.upload-status{color:var(--turf);overflow-wrap:anywhere;min-height:2em}
+.video-account{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:18px;font-size:12px}
+.video-account[hidden],.upload-preview[hidden],.video-login-form[hidden]{display:none}
+.upload-preview{max-height:260px!important}
+.video-upload-progress{width:100%;height:8px;accent-color:var(--turf)}
+.video-upload-dialog button:disabled{opacity:.45;cursor:default;transform:none}
+.add-video-btn{min-height:44px}
+.video-pin-form{display:flex;flex-direction:column;gap:12px;margin-bottom:18px}
+.video-pin-form[hidden]{display:none}
+.profile-editor-dialog{width:min(640px,calc(100% - 24px))}
+.profile-editor-dialog label{display:flex;flex-direction:column;gap:7px;font-size:13px;line-height:1.5}
+.profile-fields{margin:0;padding:0;border:0;display:flex;flex-direction:column;gap:16px;min-width:0}
+.profile-editor-dialog input:not([type=checkbox]),.profile-editor-dialog textarea{width:100%;padding:10px;font:16px Inter,system-ui,sans-serif;line-height:1.6;border:1px solid var(--line);border-radius:6px;background:var(--pitch-1);color:var(--ink);min-height:44px}
+.profile-editor-dialog textarea{resize:vertical}
+.profile-editor-dialog .profile-ai-label{flex-direction:row;align-items:flex-start;gap:10px;margin:18px 0}
+.profile-ai-label input{width:20px;height:20px;flex:none;accent-color:var(--turf)}
+.profile-editor-dialog button:disabled{opacity:.45;cursor:default;transform:none}
+.profile-status{color:var(--turf);font-size:12px;line-height:1.7;overflow-wrap:anywhere}
+.profile-pin-form{display:flex;flex-direction:column;gap:12px;margin-bottom:20px}.profile-pin-form[hidden]{display:none}
+.edit-description-btn{min-height:44px}
 @media(max-width:480px){.player-video-dialog{padding:14px}.player-video-header h2{font-size:16px}.video-close{font-size:11px}}
 @media(max-width:720px){
   .league-brand{display:none}

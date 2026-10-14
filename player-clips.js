@@ -45,7 +45,9 @@
     dialog.showModal();select(0);close.focus();
   };
   window.addPlayerClips = (card, player, lang) => {
-    const clips=clipsByPlayer[player.name==='Кайрат'?'Қайрат':player.name];
+    const shared=window.getUploadedPlayerClips?.(player.id)||[];
+    const local=clipsByPlayer[player.name==='Кайрат'?'Қайрат':player.name]||[];
+    const clips=[...local.filter(clip=>!shared.some(saved=>saved.title===clip.title)),...shared];
     if(!clips?.length)return;
     const kk=lang==='kk';
     const button=document.createElement('button');button.type='button';button.className='card-video-toggle';

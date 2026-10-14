@@ -783,6 +783,9 @@ footer.appfoot{text-align:center;color:var(--ink-dim);font-size:11.5px;margin-to
 
 <script src="club-rules.js"></script>
 <script src="player-clips.js"></script>
+<script src="vendor/tus-4.3.1.min.js"></script>
+<script src="video-upload.js"></script>
+<script src="profile-editor.js"></script>
 <script src="player-stories.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -1254,7 +1257,6 @@ function longDate(lang, date){
 }
 // Включить раздел обратно: поставь true (данные не удаляются, только скрыты)
 const FEATURES = { awards:false, finance:false };
-const ADMIN_PIN = "0722"; // поменяй этот код в файле, если хочешь свой пароль администратора
 const REFEREE_PIN = "1111"; // отдельный, более простой код для судьи — тоже можно поменять
 const DEFAULT_PAYMENT_DUE = "2026-08-12"; // сбор не каждую среду, а раз в месяц — эту дату меняет админ
 
@@ -1476,11 +1478,15 @@ function updateAdminUI(){
   document.getElementById("adminToggleBtn").textContent = adminMode ? t("logoutAdmin") : t("loginAdmin");
   renderCards(); renderPayments(); renderMatch(); renderFinance();
 }
-document.getElementById("adminToggleBtn").addEventListener("click", ()=>{
-  if(adminMode){ adminMode=false; updateAdminUI(); return; }
+document.getElementById("adminToggleBtn").addEventListener("click", async ()=>{
+  if(adminMode){ adminMode=false; clearVideoAdminSession(); updateAdminUI(); return; }
   const pin = prompt(t("adminPrompt"));
   if(pin===null) return;
-  if(pin===ADMIN_PIN){ adminMode=true; } else { alert(t("wrongPass")); }
+  const button = document.getElementById('adminToggleBtn');
+  button.disabled=true;
+  try{ await verifyVideoAdminPin(pin); adminMode=true; }
+  catch(error){ alert(error.message || t('wrongPass')); }
+  finally{ button.disabled=false; }
   updateAdminUI();
 });
 
@@ -1637,6 +1643,8 @@ function renderCards(){
           renderCards();
         }catch(err){ alert(t("photoFail")); }
       });
+      attachVideoUploader(panel, p);
+      attachProfileEditor(panel, p);
       wrap.appendChild(panel);
     }
     grid.appendChild(wrap);
@@ -2412,6 +2420,7 @@ document.getElementById("addCategoryBtn").addEventListener("click", ()=>{
   tickCountdown(); // instant, no network needed — countdown/date are always correct even while data loads
   setInterval(tickCountdown, 30000);
   await loadState();
+  await Promise.all([loadUploadedPlayerVideos(), loadPlayerDescriptions()]);
   setLoadingProgress(95);
   awardCategories.forEach(c=>{
     const map = {mvp:"catMvp",scorer:"catScorer",assist:"catAssist",keeper:"catKeeper"};
