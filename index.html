@@ -392,6 +392,55 @@ input:focus,select:focus{outline:2px solid var(--turf);outline-offset:1px;}
 .match-goals{margin-top:16px;font-size:12.5px;color:var(--ink-dim);}
 .match-goals .goal-line{padding:3px 0;}
 .match-finish-row{margin-top:18px;}
+/* team colours + player photos in the match tab */
+.pl-ava{
+  --team:#9db3a9;display:inline-flex;align-items:center;justify-content:center;flex:none;
+  width:28px;height:28px;border-radius:50%;overflow:hidden;vertical-align:middle;
+  border:2px solid var(--team);background:rgba(255,255,255,.08);
+  font-size:11px;font-weight:700;color:var(--ink);
+}
+.pl-ava img{width:100%;height:100%;object-fit:cover;display:block;}
+.pl-ava.lg{width:52px;height:52px;font-size:16px;border-width:3px;}
+.pl-ava.sm{width:22px;height:22px;font-size:9px;}
+.match-team-btn{--team:#9db3a9;border:2px solid var(--team);background:rgba(255,255,255,.05);background:color-mix(in srgb,var(--team) 22%,transparent);}
+.match-team-btn:hover{border-color:var(--team);background:color-mix(in srgb,var(--team) 36%,transparent);}
+.match-team-btn .jersey-dot{width:16px;height:16px;border-radius:4px;flex:none;border:1px solid rgba(255,255,255,.4);}
+.match-goals .goal-line{
+  --team:#9db3a9;display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;
+  margin:4px auto;max-width:460px;padding:6px 10px;border-radius:10px;
+  border-left:4px solid var(--team);background:rgba(255,255,255,.04);color:var(--ink);font-size:13.5px;
+}
+.match-history-goals .goal-line{--team:#9db3a9;display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:4px 0 4px 8px;border-left:3px solid var(--team);margin:3px 0;}
+.mh-goal{display:inline-flex;align-items:center;gap:5px;margin:2px 8px 2px 0;}
+.match-rosters{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px;text-align:left;}
+.match-roster{--team:#9db3a9;border:1px solid var(--line);border-top:4px solid var(--team);border-radius:12px;padding:10px;background:rgba(255,255,255,.03);min-width:0;}
+.match-roster-head{display:flex;align-items:center;gap:6px;font-weight:700;font-size:13px;margin-bottom:8px;overflow-wrap:anywhere;}
+.match-roster-list{display:flex;flex-direction:column;gap:5px;}
+.match-roster-item{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--ink-dim);min-width:0;}
+.match-roster-item .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.match-roster-item.scored{color:var(--ink);font-weight:700;}
+.match-roster-item .gl{margin-left:auto;flex:none;font-size:11px;}
+@media (max-width:420px){ .match-rosters{grid-template-columns:1fr;} }
+.scorer-team-head{
+  --team:#9db3a9;display:flex;align-items:center;gap:8px;margin-top:8px;padding:8px 12px;border-radius:10px;
+  font-weight:700;font-size:15px;border:2px solid var(--team);background:rgba(255,255,255,.05);
+  background:color-mix(in srgb,var(--team) 22%,transparent);
+}
+.scorer-team-head .team-color-dot{width:16px;height:16px;}
+.scorer-list .scorer-sub{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--ink-dim);padding:10px 4px 4px;}
+.scorer-list .scorer-item{--team:#9db3a9;display:flex;align-items:center;gap:12px;border:1px solid var(--line);border-left:4px solid var(--team);margin-bottom:4px;}
+.scorer-list .scorer-item .gl{margin-left:auto;font-size:12px;color:var(--ink-dim);}
+.tl-roster .pl-ava{margin-right:3px;}
+.tl-roster .tl-pl{display:inline-flex;align-items:center;margin:2px 8px 2px 0;}
+.tournament-fix{margin:12px auto 4px;max-width:520px;text-align:left;background:rgba(255,255,255,.04);border:1px dashed var(--gold-dim);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:10px;}
+.tournament-fix label{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;}
+.tournament-fix label > span:first-child{flex:0 0 110px;color:var(--ink-dim);}
+.tournament-fix select{flex:1;min-width:150px;min-height:38px;}
+.tournament-fix input[type=number]{width:80px;min-height:38px;}
+.tournament-fix .tf-actions{display:flex;gap:8px;flex-wrap:wrap;}
+#fixTournamentBtn{margin-left:6px;}
+.tournament-fix .paste-hint{font-size:12px;line-height:1.5;}
+.mh-team-sel{font-size:12px;min-height:32px;margin:4px 4px 0 0;max-width:46%;}
 .scorer-modal{
   position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.6);
   display:flex;align-items:flex-end;justify-content:center;
@@ -658,6 +707,9 @@ footer.appfoot{text-align:center;color:var(--ink-dim);font-size:11.5px;margin-to
         <div class="eyebrow">Номера команд — указывает судья</div>
         <div id="tournamentOrderInputs" style="display:grid;gap:10px;width:100%;"></div>
         <div class="paste-hint">Проведите жеребьёвку на поле и укажите её результат вручную. Команды №1 и №2 играют первыми, №3 и №4 ждут своей очереди.</div>
+        <label class="match-setup-row" style="font-size:13px;color:var(--ink-dim);">Начать с матча №
+          <input type="number" id="tournamentStartRound" min="1" max="99" value="1" style="width:80px;">
+        </label>
         <button class="btn" id="confirmTournamentOrderBtn">✓ Сохранить порядок судьи</button>
         <div class="eyebrow" id="t_matchSetupLabel">Новый матч</div>
         <div class="match-setup-row">
@@ -681,6 +733,8 @@ footer.appfoot{text-align:center;color:var(--ink-dim);font-size:11.5px;margin-to
         <div id="tournamentQueue"></div>
         <button class="btn match-control" id="startQueuedMatchBtn" style="display:none;">▶ Начать матч</button>
         <button class="btn ghost small match-control" id="endTournamentBtn" style="display:none;">Завершить турнир</button>
+        <button class="btn ghost small match-control" id="fixTournamentBtn" style="display:none;">✎ Исправить команды</button>
+        <div class="tournament-fix match-control" id="tournamentFixBox" style="display:none;"></div>
         <div class="match-timer" id="matchTimer">05:00</div>
         <div class="match-scoreboard">
           <button class="match-team-btn match-control" id="teamABtn" data-team="A">
@@ -693,6 +747,7 @@ footer.appfoot{text-align:center;color:var(--ink-dim);font-size:11.5px;margin-to
         </div>
         <div class="match-team-labels-readonly" id="teamLabelsReadonly" style="display:none;"></div>
         <div class="match-goals" id="matchGoalsLive"></div>
+        <div class="match-rosters" id="matchRosters"></div>
         <div class="match-finish-row match-control">
           <button class="btn ghost small" id="finishMatchBtn" style="border-color:var(--danger);color:var(--danger);">🏁 <span id="t_finishBtn">Завершить матч</span></button>
         </div>
@@ -701,6 +756,7 @@ footer.appfoot{text-align:center;color:var(--ink-dim);font-size:11.5px;margin-to
       <div class="scorer-modal" id="scorerModal" style="display:none;">
         <div class="scorer-modal-inner">
           <div class="eyebrow" id="t_scorerPick">Гол ⚽ — выбери автора</div>
+          <div class="scorer-team-head" id="scorerTeamHead"></div>
           <input type="search" id="scorerSearch" placeholder="">
           <div id="scorerList" class="scorer-list"></div>
           <button class="btn ghost small" id="scorerCancelBtn">✕</button>
@@ -1811,8 +1867,8 @@ function renderNamedTeamsList(){
     const rosterHtml = team.players.map(pl=>{
       const p = allPlayers.find(x=>x.id===pl.playerId);
       const name = p ? p.name : "?";
-      return `${pl.isCaptain?"<b>"+name+" (к)</b>":name}${pl.isReserve?" · "+t("reserve"):""}`;
-    }).join(", ");
+      return `<span class="tl-pl">${playerAvatarHtml(p,team.color,"sm")}${pl.isCaptain?"<b>"+name+" (к)</b>":name}${pl.isReserve?" · "+t("reserve"):""}</span>`;
+    }).join("");
     return `<div class="tl-card">
       <div class="tl-head">${orderBadge}<span class="tl-color" style="background:${team.color}"></span>${team.flag} ${team.name}</div>
       <div class="tl-roster">${rosterHtml}</div>
@@ -1884,8 +1940,17 @@ document.getElementById("startMatchBtn").addEventListener("click", startMatch);
 function escapeTeamText(value){
   return String(value ?? "").replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
 }
+function safeTeamColor(color){
+  return /^#[\da-f]{3}(?:[\da-f]{3})?$/i.test(color || "") ? color : "#9db3a9";
+}
+function playerAvatarHtml(p,color,size=""){
+  const photo = p ? photoMap[p.id] : null;
+  const initials = p ? p.name.split(/\s+/).filter(Boolean).map(w=>w[0]).slice(0,2).join("").toUpperCase() : "?";
+  const img = photo && /^(data:image\/|https:\/\/)/.test(photo) ? `<img src="${escapeTeamText(photo)}" alt="" loading="lazy">` : `<span>${escapeTeamText(initials)}</span>`;
+  return `<span class="pl-ava ${size}" style="--team:${safeTeamColor(color)}" aria-hidden="true">${img}</span>`;
+}
 function teamLabelHtml(name,color){
-  const safeColor = /^#[\da-f]{3}(?:[\da-f]{3})?$/i.test(color || "") ? color : "#9db3a9";
+  const safeColor = safeTeamColor(color);
   return `<span class="team-label"><span class="team-color-dot" style="background:${safeColor}" aria-hidden="true"></span><span>${escapeTeamText(name)}</span></span>`;
 }
 function teamColorEmoji(color){
@@ -1971,7 +2036,8 @@ document.getElementById("confirmTournamentOrderBtn").addEventListener("click", (
   const durationSec = clamp(Number(document.getElementById("matchDuration").value)||5,1,60)*60;
   const endsAt = tournamentDeadline();
   if(Date.now()>=endsAt){ alert("Турнир на сегодня завершён в 23:30."); return; }
-  matchState = queuedMatch({draw:order.slice(),playing:order.slice(0,2),waiting:order.slice(2),round:1,endsAt},durationSec);
+  const round = clamp(Math.floor(Number(document.getElementById("tournamentStartRound").value))||1,1,99);
+  matchState = queuedMatch({draw:order.slice(),playing:order.slice(0,2),waiting:order.slice(2),round,endsAt},durationSec);
   saveMatchState(); renderMatch();
 });
 document.getElementById("startQueuedMatchBtn").addEventListener("click", ()=>{
@@ -1985,6 +2051,68 @@ document.getElementById("endTournamentBtn").addEventListener("click", ()=>{
   if(!confirm("Завершить турнир? Текущий матч и история сыгранных матчей сохранятся.")) return;
   if(matchState.startedAt!==null) finishMatch(true,Date.now(),true);
   else { matchState=null; saveMatchState(); renderMatch(); }
+});
+
+/* Manual correction: if the queue went wrong, the referee puts the right teams on the pitch and reorders the waiting list. */
+let tournamentFixOpen = false;
+function teamSelectHtml(id, selected){
+  return `<select id="${id}"><option value="">Выберите команду</option>${namedTeams.map(team=>
+    `<option value="${escapeTeamText(team.id)}" ${team.id===selected?"selected":""}>${escapeTeamText(`${teamColorEmoji(team.color)} ${team.flag || ""} ${team.name}`)}</option>`).join("")}</select>`;
+}
+function renderTournamentFix(){
+  const box = document.getElementById("tournamentFixBox");
+  const tournament = matchState?.tournament;
+  if(!tournamentFixOpen || !tournament || (!adminMode && !refereeMode)){
+    tournamentFixOpen = false; box.style.display = "none"; box.innerHTML = ""; return;
+  }
+  const known = new Set(namedTeams.map(team=>team.id));
+  const order = [...tournament.playing, ...tournament.waiting].filter(id=>known.has(id));
+  namedTeams.forEach(team=>{ if(!order.includes(team.id)) order.push(team.id); });
+  box.style.display = "flex";
+  box.innerHTML = `<div class="eyebrow">Ручная правка — кто играет и кто ждёт</div>
+    <label><span>Номер матча</span><input type="number" id="fixRound" min="1" max="99" value="${tournament.round}"></label>
+    <label><span>Играет слева</span>${teamSelectHtml("fixPlay0",order[0])}</label>
+    <label><span>Играет справа</span>${teamSelectHtml("fixPlay1",order[1])}</label>
+    ${order.slice(2).map((id,i)=>`<label><span>Ждёт №${i+1}</span>${teamSelectHtml("fixWait"+i,id)}</label>`).join("")}
+    <div class="paste-hint">${matchState.startedAt!==null
+      ? "Если поменять играющие команды, текущий матч начнётся заново: таймер и голы этого матча сбросятся. Неверно сыгранный матч можно поправить или удалить в истории ниже."
+      : "После сохранения нажмите «▶ Начать матч»."}</div>
+    <div class="tf-actions"><button class="btn small" data-fix="save">✓ Сохранить</button><button class="btn ghost small" data-fix="cancel">Отмена</button></div>`;
+}
+function saveTournamentFix(){
+  const tournament = matchState?.tournament;
+  if(!tournament || (!adminMode && !refereeMode)) return;
+  const value = id=>document.getElementById(id)?.value || "";
+  const playing = [value("fixPlay0"), value("fixPlay1")];
+  const waiting = [];
+  for(let i=0; document.getElementById("fixWait"+i); i++) waiting.push(value("fixWait"+i));
+  const all = [...playing, ...waiting];
+  if(all.some(id=>!namedTeams.some(team=>team.id===id)) || new Set(all).size!==all.length){
+    alert("Поставьте каждую команду ровно на одно место. Команды не должны повторяться."); return;
+  }
+  const started = matchState.startedAt!==null;
+  const sameTeams = playing[0]===matchState.teamAId && playing[1]===matchState.teamBId;
+  if(started && !sameTeams && !confirm("Поменять команды на поле? Текущий матч начнётся заново.")) return;
+  const next = JSON.parse(JSON.stringify(tournament));
+  next.playing = playing;
+  next.waiting = waiting;
+  next.round = clamp(Math.floor(Number(value("fixRound")))||tournament.round,1,99);
+  next.draw = next.draw.concat(all.filter(id=>!next.draw.includes(id)));
+  if(started && sameTeams) matchState.tournament = next;
+  else matchState = queuedMatch(next, matchState.durationSec);
+  tournamentFixOpen = false;
+  saveMatchState(); renderMatch();
+}
+document.getElementById("fixTournamentBtn").addEventListener("click", ()=>{
+  if(!matchState?.tournament || (!adminMode && !refereeMode)) return;
+  tournamentFixOpen = !tournamentFixOpen;
+  renderTournamentFix();
+});
+document.getElementById("tournamentFixBox").addEventListener("click",(e)=>{
+  const btn = e.target.closest("[data-fix]");
+  if(!btn) return;
+  if(btn.dataset.fix==="save") saveTournamentFix();
+  else { tournamentFixOpen = false; renderTournamentFix(); }
 });
 
 function tickMatch(){
@@ -2029,13 +2157,29 @@ function renderScorerList(q){
   const src = scorerSourceMatch();
   const teamId = src ? (currentGoalTeam==="A" ? src.teamAId : src.teamBId) : null;
   const namedTeam = teamId ? namedTeams.find(tm=>tm.id===teamId) : null;
-  let pool = allPlayers;
+  const color = src ? (currentGoalTeam==="A" ? src.teamAColor : src.teamBColor) : null;
+  const head = document.getElementById("scorerTeamHead");
+  head.style.setProperty("--team", safeTeamColor(color));
+  head.innerHTML = src ? teamLabelHtml(currentGoalTeam==="A" ? src.teamAName : src.teamBName, color) : "";
+  let pool = allPlayers, others = [];
   if(namedTeam){
     const ids = new Set(namedTeam.players.map(pl=>pl.playerId));
     pool = allPlayers.filter(p=>ids.has(p.id));
+    others = allPlayers.filter(p=>!ids.has(p.id));
   }
-  const filtered = [...pool].sort((a,b)=>a.name.localeCompare(b.name,"ru")).filter(p=>p.name.toLowerCase().includes(q.toLowerCase()));
-  list.innerHTML = filtered.map(p=>`<div class="scorer-item" data-id="${p.id}">${p.name}</div>`).join("");
+  const query = q.trim().toLowerCase();
+  const pick = arr=>arr.filter(p=>p.name.toLowerCase().includes(query)).sort((a,b)=>a.name.localeCompare(b.name,"ru"));
+  const goalsBy = {};
+  (src?.goals || []).filter(g=>g.team===currentGoalTeam).forEach(g=>{ goalsBy[g.playerId] = (goalsBy[g.playerId]||0)+1; });
+  const item = p=>`<div class="scorer-item" data-id="${p.id}" style="--team:${safeTeamColor(color)}">${playerAvatarHtml(p,color,"lg")}<span>${escapeTeamText(p.name)}</span>${goalsBy[p.id]?`<span class="gl">${"⚽".repeat(goalsBy[p.id])}</span>`:""}</div>`;
+  let html = pick(pool).map(item).join("");
+  if(namedTeam && query){
+    const extra = pick(others);
+    if(extra.length) html += `<div class="scorer-sub">Другие игроки</div>` + extra.map(item).join("");
+  } else if(namedTeam){
+    html += `<div class="scorer-sub">Нет в списке? Начните вводить имя в поиске.</div>`;
+  }
+  list.innerHTML = html || `<div class="paste-hint">Никого не найдено</div>`;
   list.querySelectorAll(".scorer-item").forEach(el=>{
     el.addEventListener("click", ()=> confirmGoal(Number(el.dataset.id)));
   });
@@ -2102,7 +2246,7 @@ function goalLineHtml(g, gi, teamName, scope, mi){
             + `<span class="goal-ctl match-control" data-scope="${scope}" data-mi="${mi}" data-idx="${gi}" data-action="del" title="${t("deleteGoal")}">✕</span>`;
   const match = scope==="history" ? matchHistory[mi] : matchState;
   const color = g.team==="A" ? match?.teamAColor : match?.teamBColor;
-  return `<div class="goal-line">⚽ ${p?p.name:"?"} — ${teamLabelHtml(teamName,color)}${goalTimeLabel(g,match)} ${ctl}</div>`;
+  return `<div class="goal-line" style="--team:${safeTeamColor(color)}">⚽ ${playerAvatarHtml(p,color)} <b>${escapeTeamText(p?p.name:"?")}</b> — ${teamLabelHtml(teamName,color)}${goalTimeLabel(g,match)} ${ctl}</div>`;
 }
 function renderMatchHistory(){
   const wrap = document.getElementById("matchHistoryWrap");
@@ -2118,13 +2262,20 @@ function renderMatchHistory(){
              <span class="mh-btn match-control" data-action="add" data-team="A" data-mi="${mi}">+ ⚽ ${m.teamAName}</span>
              <span class="mh-btn match-control" data-action="add" data-team="B" data-mi="${mi}">+ ⚽ ${m.teamBName}</span>
              <span class="mh-btn danger match-control" data-action="delete-match" data-mi="${mi}">🗑 ${t("deleteMatchBtn")}</span>
-           </div>`;
+           </div>`
+        + (namedTeams.length ? `<div class="mh-actions match-control">Команды матча:
+             ${["A","B"].map(side=>`<select class="mh-team-sel" data-side="${side}" data-mi="${mi}">
+               ${namedTeams.some(tm=>tm.id===m["team"+side+"Id"]) ? "" : `<option value="">${escapeTeamText(m["team"+side+"Name"])}</option>`}
+               ${namedTeams.map(tm=>`<option value="${escapeTeamText(tm.id)}" ${tm.id===m["team"+side+"Id"]?"selected":""}>${escapeTeamText(`${teamColorEmoji(tm.color)} ${tm.name}`)}</option>`).join("")}
+             </select>`).join(" ")}
+           </div>` : "");
     } else {
       goalsHtml = m.goals.length ? m.goals.map(g=>{
         const p = allPlayers.find(x=>x.id===g.playerId);
         const teamName = g.team==="A" ? m.teamAName : m.teamBName;
-        return `⚽ ${p?p.name:"?"} (${teamLabelHtml(teamName,g.team==="A"?m.teamAColor:m.teamBColor)})${goalTimeLabel(g,m)}`;
-      }).join(" · ") : t("noGoals");
+        const color = g.team==="A" ? m.teamAColor : m.teamBColor;
+        return `<span class="mh-goal">⚽ ${playerAvatarHtml(p,color,"sm")} ${escapeTeamText(p?p.name:"?")} (${teamLabelHtml(teamName,color)})${goalTimeLabel(g,m)}</span>`;
+      }).join("") : t("noGoals");
     }
     return `<div class="match-history-item">
       <div class="match-history-head">
@@ -2178,12 +2329,45 @@ document.getElementById("matchContent").addEventListener("click",(e)=>{
   }
 });
 
+document.getElementById("matchContent").addEventListener("change",(e)=>{
+  const sel = e.target.closest(".mh-team-sel");
+  if(!sel || (!adminMode && !refereeMode)) return;
+  const m = matchHistory[Number(sel.dataset.mi)];
+  const team = namedTeams.find(tm=>tm.id===sel.value);
+  if(!m || !team) return;
+  const side = sel.dataset.side==="B" ? "B" : "A";
+  m["team"+side+"Name"] = team.name; m["team"+side+"Color"] = team.color; m["team"+side+"Id"] = team.id;
+  saveMatchHistory(); renderMatch();
+});
+
+/* Both line-ups with photos under the scoreboard, so everyone sees who plays and who scored. */
+function renderMatchRosters(){
+  const wrap = document.getElementById("matchRosters");
+  const cols = ["A","B"].map(side=>{
+    const team = namedTeams.find(tm=>tm.id===matchState["team"+side+"Id"]);
+    if(!team) return "";
+    const color = matchState["team"+side+"Color"];
+    const goalsBy = {};
+    matchState.goals.filter(g=>g.team===side).forEach(g=>{ goalsBy[g.playerId] = (goalsBy[g.playerId]||0)+1; });
+    const items = team.players.map(pl=>{
+      const p = allPlayers.find(x=>x.id===pl.playerId);
+      if(!p) return "";
+      const n = goalsBy[p.id] || 0;
+      return `<div class="match-roster-item ${n?"scored":""}">${playerAvatarHtml(p,color)}<span class="nm">${escapeTeamText(p.name)}${pl.isCaptain?" (к)":""}</span>${n?`<span class="gl">${"⚽".repeat(n)}</span>`:""}</div>`;
+    }).join("");
+    return `<div class="match-roster" style="--team:${safeTeamColor(color)}"><div class="match-roster-head">${teamLabelHtml(matchState["team"+side+"Name"],color)}</div><div class="match-roster-list">${items}</div></div>`;
+  });
+  wrap.innerHTML = cols.join("");
+  wrap.style.display = cols.some(Boolean) ? "grid" : "none";
+}
+
 function renderMatch(){
   renderTournamentOrderInputs();
   renderSwatchesInline();
   renderNamedTeamsList();
   populateSavedTeamSelects();
   const hasMatch = !!matchState;
+  if(!matchState?.tournament || (!adminMode && !refereeMode)) renderTournamentFix(); // closes a stale correction panel
   document.getElementById("matchSetupBox").style.display = hasMatch ? "none" : "flex";
   document.getElementById("matchLive").style.display = hasMatch ? "block" : "none";
   if(hasMatch){
@@ -2198,6 +2382,7 @@ function renderMatch(){
     const pending = matchState.startedAt===null;
     document.getElementById("startQueuedMatchBtn").style.display = pending ? "inline-block" : "none";
     document.getElementById("endTournamentBtn").style.display = tournament ? "inline-block" : "none";
+    document.getElementById("fixTournamentBtn").style.display = tournament ? "inline-block" : "none";
     document.getElementById("teamABtn").disabled = pending;
     document.getElementById("teamBBtn").disabled = pending;
     document.getElementById("finishMatchBtn").disabled = pending;
@@ -2205,6 +2390,8 @@ function renderMatch(){
     document.getElementById("dotTeamB").style.background = matchState.teamBColor;
     document.getElementById("nameTeamA").textContent = matchState.teamAName;
     document.getElementById("nameTeamB").textContent = matchState.teamBName;
+    document.getElementById("teamABtn").style.setProperty("--team", safeTeamColor(matchState.teamAColor));
+    document.getElementById("teamBBtn").style.setProperty("--team", safeTeamColor(matchState.teamBColor));
     document.getElementById("matchScore").textContent = `${matchState.scoreA} - ${matchState.scoreB}`;
     const roLabel = document.getElementById("teamLabelsReadonly");
     roLabel.style.display = (adminMode || refereeMode) ? "none" : "flex";
@@ -2213,6 +2400,7 @@ function renderMatch(){
     goalsWrap.innerHTML = matchState.goals.map((g,gi)=>
       goalLineHtml(g, gi, g.team==="A" ? matchState.teamAName : matchState.teamBName, "live", 0)
     ).join("");
+    renderMatchRosters();
     tickMatch();
   }
   renderMatchHistory();
