@@ -375,7 +375,7 @@ input:focus,select:focus{outline:2px solid var(--turf);outline-offset:1px;}
 .match-setup-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
 .match-setup-row input[type=text]{flex:1;min-width:140px;}
 .swatches-inline{display:flex;gap:6px;flex-wrap:wrap;}
-.swatches-inline .sw{width:24px;height:24px;border-radius:50%;cursor:pointer;border:2px solid transparent;flex:none;}
+.swatches-inline .sw{width:24px;height:24px;border-radius:50%;cursor:pointer;border:2px solid rgba(255,255,255,.2);flex:none;}
 .swatches-inline .sw.sel{border-color:var(--ink);transform:scale(1.12);}
 .match-live{margin-top:22px;background:var(--pitch-2);border:1px solid var(--line);border-radius:16px;padding:22px 18px;text-align:center;}
 .match-timer{font-family:'Bebas Neue',sans-serif;font-size:52px;color:var(--gold);line-height:1;}
@@ -439,6 +439,11 @@ input:focus,select:focus{outline:2px solid var(--turf);outline-offset:1px;}
 .tournament-fix input[type=number]{width:80px;min-height:38px;}
 .tournament-fix .tf-actions{display:flex;gap:8px;flex-wrap:wrap;}
 #fixTournamentBtn{margin-left:6px;}
+.pl-ava,.match-team-btn,.scorer-team-head,.match-goals .goal-line,.scorer-list .scorer-item,.match-roster{box-shadow:0 0 0 1px var(--team-ring,transparent);}
+.match-history-goals .goal-line{box-shadow:-1px 0 0 0 var(--team-ring,transparent);}
+.tl-colors{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;}
+.tl-colors .sw{width:24px;height:24px;border-radius:50%;cursor:pointer;border:2px solid rgba(255,255,255,.25);padding:0;}
+.tl-colors .sw.sel{border-color:var(--ink);transform:scale(1.15);}
 .tournament-fix .paste-hint{font-size:12px;line-height:1.5;}
 .mh-team-sel{font-size:12px;min-height:32px;margin:4px 4px 0 0;max-width:46%;}
 .scorer-modal{
@@ -1709,9 +1714,11 @@ function renderCards(){
 }
 
 /* ============ MATCH TAB (referee live control) ============ */
-const JERSEY_COLORS = ["#ec407a","#1565c0","#43a047","#ff7a1a","#ffd400","#8e24aa","#00acc1","#6d4c41"];
+const JERSEY_COLORS = ["#ec407a","#e53935","#1565c0","#43a047","#ff7a1a","#ffd400","#8e24aa","#00acc1","#6d4c41","#212121","#f5f5f5"];
 const COLOR_EMOJI_MAP = {"🟣":"#8e24aa","🔵":"#1565c0","🟠":"#ff7a1a","🟢":"#43a047","🔴":"#e53935","🟡":"#ffd400","⚫":"#212121","⚪":"#f5f5f5","🟤":"#6d4c41",
   "💜":"#8e24aa","💙":"#1565c0","🧡":"#ff7a1a","💚":"#43a047","❤":"#e53935","💛":"#ffd400","🖤":"#212121","🤍":"#f5f5f5","🤎":"#6d4c41",
+  "🟥":"#e53935","🟦":"#1565c0","🟧":"#ff7a1a","🟩":"#43a047","🟨":"#ffd400","🟪":"#8e24aa","🟫":"#6d4c41",
+  "⬛":"#212121","◼":"#212121","◾":"#212121","▪":"#212121","🏴":"#212121","⬜":"#f5f5f5","◻":"#f5f5f5","◽":"#f5f5f5",
   "💗":"#ec4899","🩷":"#ec4899","💕":"#ec4899","💖":"#ec4899","💓":"#ec4899","💞":"#ec4899","💘":"#ec4899","💝":"#ec4899","🩵":"#4fd1e8"};
 let setupColorA = JERSEY_COLORS[0];
 let setupColorB = JERSEY_COLORS[1];
@@ -1872,9 +1879,14 @@ function renderNamedTeamsList(){
     return `<div class="tl-card">
       <div class="tl-head">${orderBadge}<span class="tl-color" style="background:${team.color}"></span>${team.flag} ${team.name}</div>
       <div class="tl-roster">${rosterHtml}</div>
+      ${(adminMode||refereeMode)?`<div class="tl-colors" title="Цвет команды">${JERSEY_COLORS.map(hex=>
+        `<button type="button" class="sw ${hex.toLowerCase()===String(team.color).toLowerCase()?"sel":""}" style="background:${hex}" data-team-id="${escapeTeamText(team.id)}" data-hex="${hex}" aria-label="Цвет ${hex}"></button>`).join("")}</div>`:""}
       ${adminMode?`<div class="tl-del" data-id="${team.id}">✕ ${t("cancelBtn")}</div>`:""}
     </div>`;
   }).join("");
+  wrap.querySelectorAll(".tl-colors .sw").forEach(el=>{
+    el.addEventListener("click", ()=>setNamedTeamColor(el.dataset.teamId, el.dataset.hex));
+  });
   if(adminMode){
     wrap.querySelectorAll(".tl-del").forEach(el=>{
       el.addEventListener("click", ()=>{
@@ -1886,6 +1898,22 @@ function renderNamedTeamsList(){
       });
     });
   }
+}
+/* Recolours a team everywhere (also after the draw): saved team, the match on the pitch and its past matches. */
+function setNamedTeamColor(teamId, hex){
+  if(!adminMode && !refereeMode) return;
+  const team = namedTeams.find(tm=>tm.id===teamId);
+  if(!team || !JERSEY_COLORS.includes(hex)) return;
+  team.color = hex;
+  saveNamedTeams();
+  let liveChanged = false, historyChanged = false;
+  ["A","B"].forEach(side=>{
+    if(matchState && matchState["team"+side+"Id"]===teamId){ matchState["team"+side+"Color"] = hex; liveChanged = true; }
+    matchHistory.forEach(m=>{ if(m["team"+side+"Id"]===teamId){ m["team"+side+"Color"] = hex; historyChanged = true; } });
+  });
+  if(liveChanged) saveMatchState();
+  if(historyChanged) saveMatchHistory();
+  renderMatch();
 }
 function populateSavedTeamSelects(){
   ["A","B"].forEach(side=>{
@@ -1943,11 +1971,25 @@ function escapeTeamText(value){
 function safeTeamColor(color){
   return /^#[\da-f]{3}(?:[\da-f]{3})?$/i.test(color || "") ? color : "#9db3a9";
 }
+function isDarkTeamColor(color){
+  let hex = safeTeamColor(color).slice(1);
+  if(hex.length===3) hex = hex.replace(/./g,"$&$&");
+  const [r,g,b] = [0,2,4].map(i=>parseInt(hex.slice(i,i+2),16));
+  return 0.299*r+0.587*g+0.114*b < 60;
+}
+/* Dark colours (black) get a light ring so they stay visible on the dark site. */
+function teamVars(color){
+  return `--team:${safeTeamColor(color)};--team-ring:${isDarkTeamColor(color)?"rgba(255,255,255,.65)":"transparent"}`;
+}
+function setTeamVars(el,color){
+  el.style.setProperty("--team", safeTeamColor(color));
+  el.style.setProperty("--team-ring", isDarkTeamColor(color)?"rgba(255,255,255,.65)":"transparent");
+}
 function playerAvatarHtml(p,color,size=""){
   const photo = p ? photoMap[p.id] : null;
   const initials = p ? p.name.split(/\s+/).filter(Boolean).map(w=>w[0]).slice(0,2).join("").toUpperCase() : "?";
   const img = photo && /^(data:image\/|https:\/\/)/.test(photo) ? `<img src="${escapeTeamText(photo)}" alt="" loading="lazy">` : `<span>${escapeTeamText(initials)}</span>`;
-  return `<span class="pl-ava ${size}" style="--team:${safeTeamColor(color)}" aria-hidden="true">${img}</span>`;
+  return `<span class="pl-ava ${size}" style="${teamVars(color)}" aria-hidden="true">${img}</span>`;
 }
 function teamLabelHtml(name,color){
   const safeColor = safeTeamColor(color);
@@ -2159,7 +2201,7 @@ function renderScorerList(q){
   const namedTeam = teamId ? namedTeams.find(tm=>tm.id===teamId) : null;
   const color = src ? (currentGoalTeam==="A" ? src.teamAColor : src.teamBColor) : null;
   const head = document.getElementById("scorerTeamHead");
-  head.style.setProperty("--team", safeTeamColor(color));
+  setTeamVars(head, color);
   head.innerHTML = src ? teamLabelHtml(currentGoalTeam==="A" ? src.teamAName : src.teamBName, color) : "";
   let pool = allPlayers, others = [];
   if(namedTeam){
@@ -2171,7 +2213,7 @@ function renderScorerList(q){
   const pick = arr=>arr.filter(p=>p.name.toLowerCase().includes(query)).sort((a,b)=>a.name.localeCompare(b.name,"ru"));
   const goalsBy = {};
   (src?.goals || []).filter(g=>g.team===currentGoalTeam).forEach(g=>{ goalsBy[g.playerId] = (goalsBy[g.playerId]||0)+1; });
-  const item = p=>`<div class="scorer-item" data-id="${p.id}" style="--team:${safeTeamColor(color)}">${playerAvatarHtml(p,color,"lg")}<span>${escapeTeamText(p.name)}</span>${goalsBy[p.id]?`<span class="gl">${"⚽".repeat(goalsBy[p.id])}</span>`:""}</div>`;
+  const item = p=>`<div class="scorer-item" data-id="${p.id}" style="${teamVars(color)}">${playerAvatarHtml(p,color,"lg")}<span>${escapeTeamText(p.name)}</span>${goalsBy[p.id]?`<span class="gl">${"⚽".repeat(goalsBy[p.id])}</span>`:""}</div>`;
   let html = pick(pool).map(item).join("");
   if(namedTeam && query){
     const extra = pick(others);
@@ -2246,7 +2288,7 @@ function goalLineHtml(g, gi, teamName, scope, mi){
             + `<span class="goal-ctl match-control" data-scope="${scope}" data-mi="${mi}" data-idx="${gi}" data-action="del" title="${t("deleteGoal")}">✕</span>`;
   const match = scope==="history" ? matchHistory[mi] : matchState;
   const color = g.team==="A" ? match?.teamAColor : match?.teamBColor;
-  return `<div class="goal-line" style="--team:${safeTeamColor(color)}">⚽ ${playerAvatarHtml(p,color)} <b>${escapeTeamText(p?p.name:"?")}</b> — ${teamLabelHtml(teamName,color)}${goalTimeLabel(g,match)} ${ctl}</div>`;
+  return `<div class="goal-line" style="${teamVars(color)}">⚽ ${playerAvatarHtml(p,color)} <b>${escapeTeamText(p?p.name:"?")}</b> — ${teamLabelHtml(teamName,color)}${goalTimeLabel(g,match)} ${ctl}</div>`;
 }
 function renderMatchHistory(){
   const wrap = document.getElementById("matchHistoryWrap");
@@ -2355,7 +2397,7 @@ function renderMatchRosters(){
       const n = goalsBy[p.id] || 0;
       return `<div class="match-roster-item ${n?"scored":""}">${playerAvatarHtml(p,color)}<span class="nm">${escapeTeamText(p.name)}${pl.isCaptain?" (к)":""}</span>${n?`<span class="gl">${"⚽".repeat(n)}</span>`:""}</div>`;
     }).join("");
-    return `<div class="match-roster" style="--team:${safeTeamColor(color)}"><div class="match-roster-head">${teamLabelHtml(matchState["team"+side+"Name"],color)}</div><div class="match-roster-list">${items}</div></div>`;
+    return `<div class="match-roster" style="${teamVars(color)}"><div class="match-roster-head">${teamLabelHtml(matchState["team"+side+"Name"],color)}</div><div class="match-roster-list">${items}</div></div>`;
   });
   wrap.innerHTML = cols.join("");
   wrap.style.display = cols.some(Boolean) ? "grid" : "none";
@@ -2390,8 +2432,8 @@ function renderMatch(){
     document.getElementById("dotTeamB").style.background = matchState.teamBColor;
     document.getElementById("nameTeamA").textContent = matchState.teamAName;
     document.getElementById("nameTeamB").textContent = matchState.teamBName;
-    document.getElementById("teamABtn").style.setProperty("--team", safeTeamColor(matchState.teamAColor));
-    document.getElementById("teamBBtn").style.setProperty("--team", safeTeamColor(matchState.teamBColor));
+    setTeamVars(document.getElementById("teamABtn"), matchState.teamAColor);
+    setTeamVars(document.getElementById("teamBBtn"), matchState.teamBColor);
     document.getElementById("matchScore").textContent = `${matchState.scoreA} - ${matchState.scoreB}`;
     const roLabel = document.getElementById("teamLabelsReadonly");
     roLabel.style.display = (adminMode || refereeMode) ? "none" : "flex";
