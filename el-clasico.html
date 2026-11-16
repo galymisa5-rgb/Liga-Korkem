@@ -239,17 +239,18 @@ const CLASICO_DATE = "2026-11-22";
 const CLASICO_TIME = "22:30";
 const CLASICO_END = "00:00";
 
-/* id = player id on the main page, so the card photo can be shown; null = not in the base yet. */
+/* id = player id on the main page, so the card photo can be shown; null = not in the base yet.
+   photo = a picture kept in the repo (img/players/), shown instead of the database one. */
 const REAL = [
   {name:"Саян брат", id:13}, {name:"Самат брат", id:30}, {name:"Қайрат", id:4}, {name:"Ерболат", id:3},
-  {name:"Нұрсұлтан", id:23}, {name:"Азат", id:11}, {name:"Нұрсұлтан бажа", id:2}, {name:"Ерлан", id:15},
-  {name:"Ерқанат", id:null}, {name:"Асхат 2", id:null}, {name:"Ерік", id:null}, {name:"Нұржігіт", id:14},
-  {name:"Нұрбол", id:5}, {name:"Берік балдыз", id:17}, {name:"Біржан", id:null}
+  {name:"Нұрсұлтан", id:23}, {name:"Азат", id:11, photo:"img/players/azat.webp"}, {name:"Нұрсұлтан бажа", id:2}, {name:"Ерлан", id:15},
+  {name:"Ерқанат", id:null}, {name:"Асхат 2", id:null}, {name:"Ерік", id:null, photo:"img/players/erik.webp"}, {name:"Нұржігіт", id:14},
+  {name:"Нұрбол", id:5}, {name:"Берік балдыз", id:17}, {name:"Біржан", id:null, photo:"img/players/birzhan.webp"}
 ];
 const BARCA = [
   {name:"Самат С", id:29}, {name:"Асет", id:9}, {name:"Дархан", id:1}, {name:"Берік", id:31},
   {name:"Айдос", id:25}, {name:"Ерден", id:16}, {name:"Асхат", id:10}, {name:"Жандос", id:7},
-  {name:"Нұржан Барса", id:27}, {name:"Алдияр", id:12}, {name:"Сәндібек", id:8}, {name:"Алибек", id:21},
+  {name:"Нұржан Барса", id:27}, {name:"Алдияр", id:12, photo:"img/players/aldiyar.webp"}, {name:"Сәндібек", id:8}, {name:"Алибек", id:21},
   {name:"Алихан", id:6}, {name:"Алишер", id:null}
 ];
 
@@ -265,7 +266,7 @@ function renderRoster(listId, countId, players){
   ol.innerHTML = players.map((p,i)=>`
     <li class="player" style="--d:${(i*0.06).toFixed(2)}s" data-id="${p.id ?? ""}">
       <span class="num">${i+1}</span>
-      <span class="ava">${esc(initials(p.name))}</span>
+      <span class="ava">${p.photo ? `<img src="${esc(p.photo)}" alt="" data-static>` : esc(initials(p.name))}</span>
       <span class="pname">${esc(p.name)}</span>
     </li>`).join("");
   document.getElementById(countId).textContent = `${players.length} ${plural(players.length,"ИГРОК","ИГРОКА","ИГРОКОВ")}`;
@@ -348,6 +349,7 @@ async function loadPhotos(){
       const id = row.key.slice(6);
       if(typeof row.value!=="string" || !/^(data:image\/|https:\/\/)/.test(row.value)) return;
       document.querySelectorAll(`.player[data-id="${id}"] .ava`).forEach(ava=>{
+        if(ava.querySelector("img[data-static]")) return; // a photo placed in the repo wins over the database one
         const img = new Image();
         img.alt = ""; img.src = row.value;
         img.onload = ()=>ava.replaceChildren(img);

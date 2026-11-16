@@ -676,7 +676,7 @@ footer.appfoot{text-align:center;color:var(--ink-dim);font-size:11.5px;margin-to
   <a class="clasico-banner" href="el-clasico.html" aria-label="Эль Класико: Реал против Барселоны — смотреть составы">
     <span class="cb-side cb-real"><img src="img/real-madrid.svg" alt=""><span>РЕАЛ</span></span>
     <span class="cb-mid">
-      <span class="cb-eyebrow">22 ноября · Air Arena</span>
+      <span class="cb-eyebrow">22 ноября · 22:30 · Air Arena</span>
       <span class="cb-title">EL CLÁSICO</span>
       <span class="cb-cta">Смотреть составы →</span>
     </span>
@@ -1371,6 +1371,7 @@ let allPlayers = [...PLAYERS];
 let countryMap = {};
 let paymentTracker = {};
 let photoMap = {};
+const REPO_PHOTOS = {"Алдияр":"img/players/aldiyar.webp","Біржан":"img/players/birzhan.webp","Азат":"img/players/azat.webp","Ерік":"img/players/erik.webp"};
 let roleMap = {};
 let statOverrides = {};
 let awardCategories = [...DEFAULT_AWARD_CATEGORIES];
@@ -1522,6 +1523,11 @@ async function loadState(){
     Promise.all(awardCategories.map(cat=>trackAsset(safeGet("awards:"+cat.id, true)))),
   ]);
   photoKeys.forEach((k,i)=>{ if(photoResults[i]) photoMap[k.slice(6)] = photoResults[i]; });
+  // photos kept in the repo: shown only while the database has none for that player (never saved)
+  allPlayers.forEach(p=>{
+    const file = Object.entries(REPO_PHOTOS).find(([name])=>normalizeName(name)===normalizeName(p.name))?.[1];
+    if(file && !photoMap[p.id]) photoMap[p.id] = file;
+  });
   awardCategories.forEach((cat,i)=>{ if(voteResults[i]){ try{ awardVotes[cat.id] = JSON.parse(voteResults[i]); }catch(e){} } });
   setLoadingProgress(90);
 }
@@ -2034,7 +2040,7 @@ function setTeamVars(el,color){
 function playerAvatarHtml(p,color,size=""){
   const photo = p ? photoMap[p.id] : null;
   const initials = p ? p.name.split(/\s+/).filter(Boolean).map(w=>w[0]).slice(0,2).join("").toUpperCase() : "?";
-  const img = photo && /^(data:image\/|https:\/\/)/.test(photo) ? `<img src="${escapeTeamText(photo)}" alt="" loading="lazy">` : `<span>${escapeTeamText(initials)}</span>`;
+  const img = photo && /^(data:image\/|https:\/\/|img\/players\/)/.test(photo) ? `<img src="${escapeTeamText(photo)}" alt="" loading="lazy">` : `<span>${escapeTeamText(initials)}</span>`;
   return `<span class="pl-ava ${size}" style="${teamVars(color)}" aria-hidden="true">${img}</span>`;
 }
 function teamLabelHtml(name,color){
