@@ -178,7 +178,7 @@ a{color:inherit;}
   <header class="hero">
     <div class="eyebrow">Главный матч сезона</div>
     <h1 class="title">EL CLÁSICO</h1>
-    <p class="subtitle"><b>Реал</b> против <b>Барселоны</b> — два состава Лиги Көркем · 22 ноября · Air Arena</p>
+    <p class="subtitle"><b>Реал</b> против <b>Барселоны</b> — два состава Лиги Көркем · 22 ноября · 22:30 · Air Arena</p>
 
     <div class="face">
       <div class="club club-real">
@@ -234,9 +234,10 @@ a{color:inherit;}
 </div>
 
 <script>
-/* Match day (Astana time, UTC+5). Set CLASICO_TIME like "21:30" once the kick-off time is known. */
+/* Match day and time (Astana, UTC+5). An end time earlier than the start means after midnight. */
 const CLASICO_DATE = "2026-11-22";
-const CLASICO_TIME = "";
+const CLASICO_TIME = "22:30";
+const CLASICO_END = "00:00";
 
 /* id = player id on the main page, so the card photo can be shown; null = not in the base yet. */
 const REAL = [
@@ -286,18 +287,21 @@ document.addEventListener("click", hideIntro, {once:true});
 
 /* countdown */
 const KICKOFF = new Date(`${CLASICO_DATE}T${CLASICO_TIME || "00:00"}:00+05:00`);
-const DAY_END = new Date(`${CLASICO_DATE}T23:59:59+05:00`);
+const MATCH_END = CLASICO_TIME
+  ? new Date(new Date(`${CLASICO_DATE}T${CLASICO_END}:00+05:00`).getTime() + (CLASICO_END <= CLASICO_TIME ? 86400000 : 0))
+  : new Date(`${CLASICO_DATE}T23:59:59+05:00`);
 const dateText = new Intl.DateTimeFormat("ru-RU",{timeZone:"Asia/Qyzylorda",weekday:"long",day:"numeric",month:"long"}).format(KICKOFF);
 document.getElementById("when").innerHTML = `<b>${dateText[0].toUpperCase()+dateText.slice(1)}</b> · `
-  + (CLASICO_TIME ? `начало в <b>${CLASICO_TIME}</b>` : "время начала уточняется");
+  + (CLASICO_TIME ? `<b>${CLASICO_TIME} — ${CLASICO_END}</b>` : "время начала уточняется");
 document.getElementById("cdLabel").textContent = CLASICO_TIME ? "До начала матча" : "До дня матча";
 function tick(){
   const now = Date.now();
   let s = Math.max(0, Math.floor((KICKOFF - now)/1000));
   if(s===0){
-    const live = now <= DAY_END;
+    const live = now <= MATCH_END;
     document.getElementById("cdLabel").textContent = "";
-    document.getElementById("countdown").innerHTML = `<div class="cd" style="min-width:220px"><b>${live ? (CLASICO_TIME ? "ИДЁТ МАТЧ" : "МАТЧ СЕГОДНЯ") : "МАТЧ СЫГРАН"}</b><span>Air Arena</span></div>`;
+    document.getElementById("countdown").innerHTML = `<div class="cd" style="min-width:220px"><b>${live ? (CLASICO_TIME ? "ИДЁТ МАТЧ" : "МАТЧ СЕГОДНЯ") : "МАТЧ СЫГРАН"}</b><span>${CLASICO_TIME ? `${CLASICO_TIME} — ${CLASICO_END} · ` : ""}Air Arena</span></div>`;
+    if(live) setTimeout(tick, 30000); // switch to "played" when the match ends
     return;
   }
   const set=(id,v)=>{ document.getElementById(id).textContent = v; };
@@ -310,14 +314,36 @@ function tick(){
 tick();
 
 /* photos from the main page's player cards (read-only; the page works without them) */
+const sbGet = async query=>{
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/app_data?${query}`, {headers:{apikey:SUPABASE_ANON_KEY, Authorization:`Bearer ${SUPABASE_ANON_KEY}`}});
+  if(!res.ok) throw new Error(res.status);
+  return res.json();
+};
+// same letter folding as the main page, so "Ерқанат" finds "Ерканат" too
+const normName = s=>s.toLowerCase().replace(/ё/g,"е").replace(/ә/g,"а").replace(/қ/g,"к").replace(/[ұү]/g,"у")
+  .replace(/ғ/g,"г").replace(/і/g,"и").replace(/ң/g,"н").replace(/ө/g,"о").replace(/\s+/g," ").trim();
+/* Players added on the site itself (not in the built-in list) only have an id in the database: find them by name. */
+async function linkCustomPlayers(){
+  const missing = [...REAL, ...BARCA].filter(p=>p.id===null);
+  if(!missing.length) return;
+  const rows = await sbGet(`select=value&key=eq.custom-players`);
+  let custom = [];
+  try{ custom = JSON.parse(rows[0]?.value || "[]"); }catch(e){}
+  missing.forEach(p=>{
+    const found = custom.find(c=>c && c.name && normName(c.name)===normName(p.name));
+    if(!found) return;
+    p.id = found.id;
+    document.querySelectorAll(".player").forEach(li=>{
+      if(li.dataset.id==="" && li.querySelector(".pname").textContent===p.name) li.dataset.id = found.id;
+    });
+  });
+}
 async function loadPhotos(){
-  const ids = [...REAL, ...BARCA].map(p=>p.id).filter(id=>id!==null);
+  try{ await linkCustomPlayers(); }catch(e){ /* keep going with the known ids */ }
+  const ids = [...new Set([...REAL, ...BARCA].map(p=>p.id).filter(id=>id!==null))];
   const keys = ids.map(id=>`"photo:${id}"`).join(",");
-  const url = `${SUPABASE_URL}/rest/v1/app_data?select=key,value&key=in.(${encodeURIComponent(keys)})`;
   try{
-    const res = await fetch(url, {headers:{apikey:SUPABASE_ANON_KEY, Authorization:`Bearer ${SUPABASE_ANON_KEY}`}});
-    if(!res.ok) return;
-    const rows = await res.json();
+    const rows = await sbGet(`select=key,value&key=in.(${encodeURIComponent(keys)})`);
     rows.forEach(row=>{
       const id = row.key.slice(6);
       if(typeof row.value!=="string" || !/^(data:image\/|https:\/\/)/.test(row.value)) return;
