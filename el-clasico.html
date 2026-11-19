@@ -17,7 +17,7 @@
 *{box-sizing:border-box;margin:0;padding:0;}
 html{scroll-behavior:smooth;overflow-x:clip;}
 body{
-  min-height:100vh;color:var(--ink);font-family:Inter,system-ui,sans-serif;overflow-x:hidden;
+  min-height:100vh;color:var(--ink);font-family:Inter,system-ui,sans-serif;overflow-x:clip;
   background:
     radial-gradient(ellipse at 15% 0,rgba(242,193,78,.18),transparent 45%),
     radial-gradient(ellipse at 85% 0,rgba(165,0,68,.28),transparent 45%),
@@ -134,6 +134,7 @@ a{color:inherit;}
   opacity:0;transform:translateY(14px) scale(.98);transition:transform .25s,border-color .25s,background .25s;
 }
 .team-barca .player{--c:#ff4f8a;}
+.player.shown{opacity:1;transform:none;}
 .player.in{animation:playerIn .55s cubic-bezier(.2,.8,.2,1) forwards;animation-delay:var(--d,0s);}
 @keyframes playerIn{to{opacity:1;transform:none}}
 .player:hover{border-color:var(--c);background:rgba(255,255,255,.06);transform:translateX(4px);}
@@ -166,6 +167,11 @@ body.is-admin .player:focus-visible{outline:2px solid var(--turf);outline-offset
 .admin-actions{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;}
 .admin-actions button,.out-btn{font:inherit;font-size:12.5px;font-weight:600;color:var(--ink);background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:10px;padding:8px 12px;cursor:pointer;}
 .admin-actions button:hover,.out-btn:hover{border-color:var(--turf);}
+.admin-actions button:disabled{opacity:.4;cursor:default;}
+.admin-actions .save-btn{background:var(--turf);color:#0b1b38;border-color:var(--turf);font-weight:800;font-size:14px;padding:10px 16px;}
+.admin-actions .save-btn:not(:disabled){animation:savePulse 1.6s ease-in-out infinite;}
+@keyframes savePulse{50%{box-shadow:0 0 0 6px rgba(206,243,92,.25)}}
+.admin-status.dirty{color:var(--real-gold);}
 .out-box{margin-top:20px;border:1px dashed var(--line);border-radius:18px;padding:12px 4px 4px;}
 .out-head{padding:0 14px;font-weight:700;}
 .out-head small{font-weight:400;font-size:12px;color:var(--ink-dim);margin-left:6px;}
@@ -253,9 +259,11 @@ body.is-admin .player:focus-visible{outline:2px solid var(--turf);outline-offset
   </header>
 
   <div class="admin-bar" id="adminBar" hidden>
-    <div><b>Режим админа</b><small>Нажмите на игрока, чтобы изменить. Сохраняется сразу для всех.</small></div>
+    <div><b>Режим админа</b><small>Нажмите на игрока, чтобы изменить, затем «Сохранить».</small></div>
     <span class="admin-status" id="adminStatus" aria-live="polite"></span>
     <div class="admin-actions">
+      <button type="button" class="save-btn" id="saveLineupBtn" disabled>💾 Сохранить</button>
+      <button type="button" id="undoLineupBtn" disabled>Отменить</button>
       <button type="button" id="resetLineupBtn">↺ Исходные составы</button>
       <button type="button" id="adminLogoutBtn">Выйти</button>
     </div>
@@ -341,7 +349,7 @@ function avatarHtml(p){
   return src ? `<img src="${esc(src)}" alt="">` : esc(initials(p.name));
 }
 function playerRow(p, team, index, number){
-  const cls = `player${p.sub?" sub":""}${revealed?" in":""}`;
+  const cls = `player${p.sub?" sub":""}${revealed?" shown":""}`;
   return `<li class="${cls}" style="--d:${(index*0.06).toFixed(2)}s" data-team="${team}" data-index="${index}" ${isAdmin?'tabindex="0" role="button"':""}>
       <span class="num">${number}</span>
       <span class="ava">${avatarHtml(p)}</span>
@@ -438,10 +446,12 @@ const allInLineup = ()=>[...lineup.real, ...lineup.barca, ...lineup.out];
 
 /* Saved line-up from the database; null = none saved yet. Throws if the database can't be reached. */
 let lineupLoaded = false; // edits are allowed only after a successful load, so defaults never overwrite a saved line-up
+let savedUpdatedAt = null; // updated_at of the version we loaded or last saved: detects edits from another device
 async function loadLineup(){
-  const rows = await sbGet(`select=value&key=eq.clasico-lineup`);
+  const rows = await sbGet(`select=value,updated_at&key=eq.clasico-lineup`);
   lineupLoaded = true;
   if(!rows.length) return;
+  savedUpdatedAt = rows[0].updated_at;
   const saved = JSON.parse(rows[0].value);
   if(!Array.isArray(saved?.real) || !Array.isArray(saved?.barca)) return;
   // fill photo/id from the built-in lists, so photos added to the repo later still show
@@ -475,7 +485,12 @@ async function loadPhotos(){
   });
 }
 async function init(){
-  try{ await loadLineup(); }catch(e){ /* database asleep or offline: built-in line-up, editing disabled */ }
+  try{ await loadLineup(); }
+  catch(e){
+    // the database may have been asleep: it wakes on this first request, so try once more
+    await new Promise(r=>setTimeout(r, 3000));
+    try{ await loadLineup(); }catch(e2){ /* offline: built-in line-up, editing disabled */ }
+  }
   renderSquads();
   try{ await linkCustomPlayers(); }catch(e){}
   try{ await loadPhotos(); }catch(e){}
@@ -509,20 +524,67 @@ document.getElementById("adminLoginBtn").addEventListener("click", async ()=>{
   setAdmin(true);
   if(!lineupLoaded) adminStatus("База недоступна — изменения не сохранятся. Обновите страницу позже.", true);
 });
-document.getElementById("adminLogoutBtn").addEventListener("click", ()=>setAdmin(false));
+document.getElementById("adminLogoutBtn").addEventListener("click", ()=>{
+  if(dirty && !confirm("Есть несохранённые изменения. Выйти без сохранения?")) return;
+  if(dirty){ lineup = JSON.parse(savedSnapshot); dirty = false; updateSaveUI(); }
+  setAdmin(false);
+});
 
-let saving = Promise.resolve();
-async function commit(next){
-  if(!lineupLoaded){ alert("База была недоступна при открытии страницы, поэтому изменения не сохраняются. Обновите страницу."); return false; }
-  const prev = lineup;
+let savedSnapshot = null; // the line-up as it is in the database
+let dirty = false;
+function updateSaveUI(){
+  document.getElementById("saveLineupBtn").disabled = !dirty;
+  document.getElementById("undoLineupBtn").disabled = !dirty;
+  if(dirty) adminStatus("Есть несохранённые изменения");
+  document.getElementById("adminStatus").classList.toggle("dirty", dirty);
+}
+function commit(next){
+  if(!lineupLoaded){ alert("База была недоступна при открытии страницы, поэтому изменения не сохранятся. Обновите страницу."); return false; }
+  if(savedSnapshot===null) savedSnapshot = JSON.stringify(lineup);
   lineup = next;
+  dirty = true;
   renderSquads();
-  adminStatus("Сохраняю…");
-  saving = saving.then(()=>sbSet("clasico-lineup", JSON.stringify({...lineup, updatedAt:Date.now()})))
-    .then(()=>adminStatus("Сохранено ✓"))
-    .catch(()=>{ lineup = prev; renderSquads(); adminStatus("Не сохранилось — проверьте интернет", true); });
+  updateSaveUI();
   return true;
 }
+const sameLineup = (a,b)=>JSON.stringify({real:a.real,barca:a.barca,out:a.out})===JSON.stringify({real:b.real,barca:b.barca,out:b.out});
+async function writeAndVerify(){
+  await sbSet("clasico-lineup", JSON.stringify({...lineup, updatedAt:Date.now()}));
+  const rows = await sbGet(`select=value,updated_at&key=eq.clasico-lineup`);
+  if(!rows.length || !sameLineup(JSON.parse(rows[0].value), lineup)) throw new Error("not saved");
+  savedUpdatedAt = rows[0].updated_at;
+}
+async function saveLineup(){
+  if(!dirty) return;
+  const btn = document.getElementById("saveLineupBtn");
+  btn.disabled = true;
+  adminStatus("Сохраняю…");
+  try{
+    // someone else saved after we loaded? don't silently overwrite their changes
+    const cur = await sbGet(`select=updated_at&key=eq.clasico-lineup`).catch(()=>null);
+    if(cur && cur.length && savedUpdatedAt && cur[0].updated_at!==savedUpdatedAt
+       && !confirm("Составы уже изменили на другом устройстве после того, как вы открыли страницу. Сохранить ваш вариант поверх?")){
+      adminStatus("Не сохранено. Обновите страницу, чтобы увидеть свежие составы.", true); btn.disabled = false; return;
+    }
+    try{ await writeAndVerify(); }
+    catch(e){ await new Promise(r=>setTimeout(r, 2500)); await writeAndVerify(); } // database may have just woken up
+    dirty = false;
+    savedSnapshot = JSON.stringify(lineup);
+    updateSaveUI();
+    adminStatus(`Сохранено ✓ ${new Intl.DateTimeFormat("ru-RU",{timeZone:"Asia/Qyzylorda",hour:"2-digit",minute:"2-digit"}).format(new Date())}`);
+  }catch(e){
+    btn.disabled = false;
+    adminStatus("Не сохранилось. Проверьте интернет и нажмите «Сохранить» ещё раз.", true);
+  }
+}
+document.getElementById("saveLineupBtn").addEventListener("click", saveLineup);
+document.getElementById("undoLineupBtn").addEventListener("click", ()=>{
+  if(!dirty || !confirm("Отменить несохранённые изменения?")) return;
+  lineup = JSON.parse(savedSnapshot);
+  dirty = false;
+  renderSquads(); updateSaveUI(); adminStatus("");
+});
+window.addEventListener("beforeunload", e=>{ if(dirty){ e.preventDefault(); e.returnValue = ""; } });
 const clone = ()=>JSON.parse(JSON.stringify(lineup));
 const other = team=>team==="real" ? "barca" : "real";
 const starterCount = (l, team)=>l[team].filter(p=>!p.sub).length;
@@ -628,7 +690,7 @@ document.getElementById("outList").addEventListener("click", e=>{
   if(btn && isAdmin) returnToSquad(Number(btn.dataset.index), btn.dataset.return);
 });
 document.getElementById("resetLineupBtn").addEventListener("click", ()=>{
-  if(!confirm("Вернуть исходные составы? Все изменения админа пропадут.")) return;
+  if(!confirm("Вернуть исходные составы? После «Сохранить» изменения админа пропадут.")) return;
   const next = defaultLineup();
   next.real.concat(next.barca).forEach(p=>{ const cur = allInLineup().find(x=>x.name===p.name); if(cur) p.id = cur.id; });
   commit(next);
