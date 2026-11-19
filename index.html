@@ -343,6 +343,11 @@ input:focus,select:focus{outline:2px solid var(--turf);outline-offset:1px;}
   font-size:12px;font-weight:700;cursor:pointer;
 }
 .fcard-admin .photo-btn input{display:none;}
+.fcard-admin .card-del-btn{
+  background:transparent;color:var(--danger);border:1px solid var(--danger);border-radius:8px;padding:8px;
+  font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;
+}
+.fcard-admin .card-del-btn:hover{background:rgba(224,101,79,.12);}
 
 /* ===== EL CLÁSICO BANNER ===== */
 .clasico-banner{
@@ -405,6 +410,11 @@ input:focus,select:focus{outline:2px solid var(--turf);outline-offset:1px;}
 .match-live{margin-top:22px;background:var(--pitch-2);border:1px solid var(--line);border-radius:16px;padding:22px 18px;text-align:center;}
 .match-timer{font-family:'Bebas Neue',sans-serif;font-size:52px;color:var(--gold);line-height:1;}
 .match-timer.time-up{color:var(--danger);}
+.match-timer.paused{animation:pausedBlink 1.2s ease-in-out infinite;}
+@keyframes pausedBlink{50%{opacity:.35}}
+.match-paused-label{font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.2em;color:var(--gold);margin-bottom:4px;}
+#pauseMatchBtn{margin-top:10px;}
+#pauseMatchBtn.resume{border-color:var(--turf);color:var(--turf-bright);}
 .match-scoreboard{display:flex;align-items:center;justify-content:center;gap:18px;margin-top:14px;flex-wrap:wrap;}
 .match-team-btn{
   display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.05);border:1px solid var(--line);
@@ -775,7 +785,9 @@ footer.appfoot{text-align:center;color:var(--ink-dim);font-size:11.5px;margin-to
         <button class="btn ghost small match-control" id="endTournamentBtn" style="display:none;">Завершить турнир</button>
         <button class="btn ghost small match-control" id="fixTournamentBtn" style="display:none;">✎ Исправить команды</button>
         <div class="tournament-fix match-control" id="tournamentFixBox" style="display:none;"></div>
+        <div class="match-paused-label" id="matchPausedLabel" style="display:none;">⏸ ПАУЗА</div>
         <div class="match-timer" id="matchTimer">05:00</div>
+        <button class="btn ghost small match-control" id="pauseMatchBtn" style="display:none;">⏸ Пауза</button>
         <div class="match-scoreboard">
           <button class="match-team-btn match-control" id="teamABtn" data-team="A">
             <span class="jersey-dot" id="dotTeamA"></span><span id="nameTeamA">Команда A</span>
@@ -1367,7 +1379,10 @@ const REFEREE_PIN = "1111"; // отдельный, более простой к�
 const DEFAULT_PAYMENT_DUE = "2026-08-12"; // сбор не каждую среду, а раз в месяц — эту дату меняет админ
 
 let customPlayers = [];
+let hiddenPlayers = [];    // ids of deleted cards: built-in players are hidden, and no id is ever reused
 let allPlayers = [...PLAYERS];
+function visiblePlayers(){ return [...PLAYERS, ...customPlayers].filter(p=>!hiddenPlayers.includes(p.id)); }
+function nextPlayerId(){ return Math.max(0, ...PLAYERS.map(p=>p.id), ...customPlayers.map(p=>p.id), ...hiddenPlayers)+1; }
 let countryMap = {};
 let paymentTracker = {};
 let photoMap = {};
@@ -1480,7 +1495,7 @@ async function loadState(){
   const [
     langVal, countriesVal, paymentsVal, customVal,
     rolesVal, overridesVal, categoriesVal, myVotesVal,
-    matchStateVal, matchHistoryVal, financeVal, namedTeamsVal
+    matchStateVal, matchHistoryVal, financeVal, namedTeamsVal, hiddenVal
   ] = await Promise.all([
     safeGet("lang-pref", false),
     safeGet("countries", true),
@@ -1494,7 +1509,8 @@ async function loadState(){
     safeGet("match-history", true),
     safeGet("finance", true),
     safeGet("named-teams", true),
-  ].map(request=>request.then(value=>{setLoadingProgress(15+(++baseLoaded/12)*50);return value;})));
+    safeGet("hidden-players", true),
+  ].map(request=>request.then(value=>{setLoadingProgress(15+(++baseLoaded/13)*50);return value;})));
   if(!supabaseConnectionOk) sharedWritesLocked = true;
   if(langVal) LANG = langVal;
   if(countriesVal){ try{ countryMap = JSON.parse(countriesVal); }catch(e){} }
@@ -1508,8 +1524,9 @@ async function loadState(){
   if(matchHistoryVal){ try{ matchHistory = JSON.parse(matchHistoryVal) || []; }catch(e){} }
   if(financeVal){ try{ finance = JSON.parse(financeVal) || {balance:0,transactions:[]}; }catch(e){} }
   if(namedTeamsVal){ try{ namedTeams = JSON.parse(namedTeamsVal) || []; }catch(e){} }
+  if(hiddenVal){ try{ hiddenPlayers = JSON.parse(hiddenVal) || []; }catch(e){} }
 
-  allPlayers = [...PLAYERS, ...customPlayers];
+  allPlayers = visiblePlayers();
   allPlayers.forEach(p=>{ applyPlayerProfile(p); if(!countryMap[p.id]) countryMap[p.id]=defaultCountry(p); });
 
   // photos + award votes: fetch in parallel too
@@ -1650,7 +1667,7 @@ document.getElementById("addPlayerBtn").addEventListener("click", ()=>{
   let birth = null;
   const m = birthRaw.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
   if(m) birth = `${m[3]}-${m[2]}-${m[1]}`;
-  const id = Math.max(0,...allPlayers.map(p=>p.id))+1;
+  const id = nextPlayerId();
   const np = {id,name,pos,birth,paidJuly:false,reserve:true,custom:true};
   customPlayers.push(np); allPlayers.push(np);
   countryMap[id]=defaultCountry(np);
@@ -1759,11 +1776,36 @@ function renderCards(){
       });
       attachVideoUploader(panel, p);
       attachProfileEditor(panel, p);
+      const delBtn = document.createElement("button");
+      delBtn.type = "button";
+      delBtn.className = "card-del-btn";
+      delBtn.textContent = LANG==="kk" ? "🗑 Карточканы жою" : "🗑 Удалить карточку";
+      delBtn.addEventListener("click", ()=>deletePlayerCard(p));
+      panel.appendChild(delBtn);
       wrap.appendChild(panel);
     }
     grid.appendChild(wrap);
   });
   renderCardsCount();
+}
+
+/* Admin removes a card (e.g. a duplicate). Added players leave custom-players; built-in ones are hidden.
+   Either way the id goes to hidden-players so a new player never inherits its photo or stats. */
+async function deletePlayerCard(p){
+  if(!adminMode) return;
+  const msg = LANG==="kk"
+    ? `«${p.name}» карточкасын жою керек пе? Оны командалар мен тарихтан да көрмейсіз.`
+    : `Удалить карточку «${p.name}»? В составах команд и истории матчей вместо имени будет «?».`;
+  if(!confirm(msg)) return;
+  const nextHidden = hiddenPlayers.includes(p.id) ? hiddenPlayers : [...hiddenPlayers, p.id];
+  const nextCustom = customPlayers.filter(c=>c.id!==p.id);
+  const savedHidden = await storageSet("hidden-players", JSON.stringify(nextHidden), true);
+  const savedCustom = nextCustom.length===customPlayers.length ? true : await storageSet("custom-players", JSON.stringify(nextCustom), true);
+  if(!savedHidden || !savedCustom){ alert(LANG==="kk" ? "Сақталмады. Бетті жаңартып, қайталаңыз." : "Не удалось сохранить. Обновите страницу и попробуйте ещё раз."); return; }
+  hiddenPlayers = nextHidden;
+  customPlayers = nextCustom;
+  allPlayers = visiblePlayers();
+  renderCards(); renderPayments(); renderFinance(); renderMatch();
 }
 
 /* ============ MATCH TAB (referee live control) ============ */
@@ -1891,7 +1933,7 @@ function applyParsedTeams(teams){
       const val = sel ? sel.value : "__new__";
       let pid;
       if(val==="__new__"){
-        pid = Math.max(0,...allPlayers.map(p=>p.id))+1;
+        pid = nextPlayerId();
         const np = {id:pid, name:it.raw, pos:"MID", birth:null, paidJuly:false, reserve:it.isReserve, custom:true};
         customPlayers.push(np); allPlayers.push(np);
         countryMap[pid] = defaultCountry(np);
@@ -2070,7 +2112,7 @@ function closeExpiredTournament(){
   if(!matchState?.tournament || (!adminMode && !refereeMode)) return false;
   const deadline = matchState.tournament.endsAt ?? tournamentDeadline(matchState.startedAt ?? Date.now());
   if(Date.now()<deadline) return false;
-  if(matchState.startedAt!==null) finishMatch(true,Math.min(deadline,matchState.startedAt+matchState.durationSec*1000),true);
+  if(matchState.startedAt!==null) finishMatch(true,Math.min(deadline,matchState.pausedAt ?? Infinity,matchState.startedAt+matchState.durationSec*1000),true);
   else { matchState=null; saveMatchState(); renderMatch(); }
   return true;
 }
@@ -2210,19 +2252,37 @@ document.getElementById("tournamentFixBox").addEventListener("click",(e)=>{
   else { tournamentFixOpen = false; renderTournamentFix(); }
 });
 
+/* Seconds played. While paused the clock stands at pausedAt; resuming shifts startedAt by the pause,
+   so the timer, goal minutes and match length all leave the pause out. */
+function playedMs(m, at=Date.now()){
+  if(!m || m.startedAt===null) return 0;
+  return Math.max(0, Math.min(at, m.pausedAt ?? at) - m.startedAt);
+}
+document.getElementById("pauseMatchBtn").addEventListener("click", ()=>{
+  if(!matchState || matchState.startedAt===null || (!adminMode && !refereeMode)) return;
+  if(matchState.pausedAt){
+    matchState.startedAt += Date.now() - matchState.pausedAt;
+    matchState.pausedAt = null;
+  } else {
+    matchState.pausedAt = Date.now();
+  }
+  saveMatchState(); renderMatch();
+});
+
 function tickMatch(){
   if(closeExpiredTournament()) return;
   if(!matchState) return;
   const el = document.getElementById("matchTimer");
   if(!el) return;
-  const elapsed = matchState.startedAt===null ? 0 : Math.floor((Date.now()-matchState.startedAt)/1000);
+  const elapsed = Math.floor(playedMs(matchState)/1000);
   let remaining = matchState.durationSec - elapsed;
   if(remaining<=0){ remaining=0; matchState.timeUp = true; }
   const mm = String(Math.floor(remaining/60)).padStart(2,"0");
   const ss = String(remaining%60).padStart(2,"0");
   el.textContent = `${mm}:${ss}`;
   el.classList.toggle("time-up", !!matchState.timeUp);
-  if(remaining===0 && matchState.tournament && (adminMode || refereeMode)) finishMatch(true,matchState.startedAt+matchState.durationSec*1000);
+  el.classList.toggle("paused", !!matchState.pausedAt);
+  if(remaining===0 && !matchState.pausedAt && matchState.tournament && (adminMode || refereeMode)) finishMatch(true,matchState.startedAt+matchState.durationSec*1000);
 }
 let goalEditCtx = null; // null = add live goal | {scope:"live",index} | {scope:"history",matchIdx,index|null}
 const historyEditOpen = new Set();
@@ -2299,7 +2359,7 @@ function confirmGoal(playerId){
     }
   } else {
     if(!matchState) { closeScorerModal(); return; }
-    const elapsed = Math.floor((Date.now()-matchState.startedAt)/1000);
+    const elapsed = Math.floor(playedMs(matchState)/1000);
     matchState.goals.push({team:currentGoalTeam, playerId, atSec:elapsed,scoredAt:Date.now()});
     recomputeScores(matchState);
     if(matchState.scoreA>=2 || matchState.scoreB>=2){
@@ -2326,7 +2386,7 @@ function finishMatch(automatic=false,finishedAt=Date.now(),stopTournament=false)
     teamBName: matchState.teamBName, teamBColor: matchState.teamBColor, teamBId: matchState.teamBId || null,
     scoreA: matchState.scoreA, scoreB: matchState.scoreB,
     goals: matchState.goals, startedAt:matchState.startedAt, finishedAt,
-    elapsedSec:Math.max(0,Math.floor((finishedAt-matchState.startedAt)/1000))
+    elapsedSec:Math.floor(playedMs(matchState, finishedAt)/1000)
   });
   matchState = stopTournament ? null : advanceTournament(matchState);
   saveMatchState();
@@ -2476,6 +2536,11 @@ function renderMatch(){
       ? `Матч №${tournament.round} · Следующие: ${tournament.waiting.map(teamLabel).join(" → ")}` : "";
     const pending = matchState.startedAt===null;
     document.getElementById("startQueuedMatchBtn").style.display = pending ? "inline-block" : "none";
+    const pauseBtn = document.getElementById("pauseMatchBtn");
+    pauseBtn.style.display = pending ? "none" : "inline-block";
+    pauseBtn.textContent = matchState.pausedAt ? "▶ Продолжить" : "⏸ Пауза";
+    pauseBtn.classList.toggle("resume", !!matchState.pausedAt);
+    document.getElementById("matchPausedLabel").style.display = matchState.pausedAt ? "block" : "none";
     document.getElementById("endTournamentBtn").style.display = tournament ? "inline-block" : "none";
     document.getElementById("fixTournamentBtn").style.display = tournament ? "inline-block" : "none";
     document.getElementById("teamABtn").disabled = pending;

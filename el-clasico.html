@@ -127,7 +127,7 @@ a{color:inherit;}
 .team-head h2{font-family:'Oswald','Bebas Neue',sans-serif;font-weight:700;font-size:30px;letter-spacing:.05em;line-height:1;}
 .team-head small{display:block;font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.1em;opacity:.8;margin-top:4px;}
 .team-barca .team-head h2,.team-barca .team-head small{text-shadow:0 2px 10px rgba(0,0,0,.45);}
-.roster{list-style:none;padding:10px 12px 14px;display:flex;flex-direction:column;gap:6px;}
+.roster{list-style:none;padding:8px 12px 10px;display:flex;flex-direction:column;gap:6px;}
 .player{
   --c:var(--real-gold);display:flex;align-items:center;gap:12px;padding:8px 10px;border-radius:12px;
   background:rgba(255,255,255,.03);border:1px solid transparent;
@@ -145,6 +145,45 @@ a{color:inherit;}
 .pname{font-size:15px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .count{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink-dim);}
 
+.squad-label{display:flex;align-items:center;justify-content:space-between;margin:14px 14px 0;font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-dim);}
+.squad-label b{color:var(--ink);font-weight:700;}
+.squad-label.over b{color:#ff8a7a;}
+.squad-empty{margin:8px 14px 14px;font-size:12.5px;color:var(--ink-dim);}
+.player.sub{background:rgba(255,255,255,.015);}
+.player.sub .pname{color:var(--ink-dim);font-weight:500;}
+.cap{flex:none;display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;margin-left:6px;
+  background:var(--real-gold);color:#1a1200;font-weight:800;font-size:12px;box-shadow:0 0 0 2px rgba(242,193,78,.35);}
+.team-barca .cap{background:var(--barca-gold);}
+.edit-mark{margin-left:auto;flex:none;color:var(--ink-dim);font-size:18px;line-height:1;}
+body.is-admin .player{cursor:pointer;}
+body.is-admin .player:focus-visible{outline:2px solid var(--turf);outline-offset:2px;}
+.admin-bar{position:sticky;top:8px;z-index:20;display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;margin-top:34px;padding:12px 14px;border-radius:14px;
+  background:rgba(11,27,56,.92);backdrop-filter:blur(8px);border:1px solid var(--turf);}
+.admin-bar[hidden],.out-box[hidden],.link-btn[hidden]{display:none;}
+.admin-bar small{display:block;font-size:12px;color:var(--ink-dim);}
+.admin-status{font-size:12.5px;font-weight:700;color:var(--turf);}
+.admin-status.err{color:#ff8a7a;}
+.admin-actions{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;}
+.admin-actions button,.out-btn{font:inherit;font-size:12.5px;font-weight:600;color:var(--ink);background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:10px;padding:8px 12px;cursor:pointer;}
+.admin-actions button:hover,.out-btn:hover{border-color:var(--turf);}
+.out-box{margin-top:20px;border:1px dashed var(--line);border-radius:18px;padding:12px 4px 4px;}
+.out-head{padding:0 14px;font-weight:700;}
+.out-head small{font-weight:400;font-size:12px;color:var(--ink-dim);margin-left:6px;}
+.out-box .player{--c:var(--ink-dim);opacity:1;transform:none;}
+.out-btns{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;}
+.link-btn{font:inherit;color:var(--turf);background:none;border:0;padding:0;cursor:pointer;text-decoration:underline;}
+.sheet{position:fixed;inset:0;z-index:60;display:flex;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.55);}
+.sheet[hidden]{display:none;}
+.sheet-card{width:100%;max-width:440px;background:var(--bg-2);border:1px solid var(--line);border-radius:20px 20px 0 0;padding:18px 16px calc(16px + env(safe-area-inset-bottom));}
+.sheet-title{font-size:18px;font-weight:800;}
+.sheet-sub{font-size:12.5px;color:var(--ink-dim);margin:2px 0 14px;}
+.sheet-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.sheet-actions button,.sheet-cancel{font:inherit;font-size:14px;font-weight:600;color:var(--ink);background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:12px;padding:12px 10px;cursor:pointer;min-height:46px;}
+.sheet-actions button:hover{border-color:var(--turf);}
+.sheet-actions button:disabled{opacity:.35;cursor:default;}
+.sheet-actions .wide{grid-column:1/-1;}
+.sheet-actions .danger{color:#ff8a7a;border-color:rgba(255,138,122,.45);}
+.sheet-cancel{width:100%;margin-top:10px;background:transparent;}
 .foot{text-align:center;margin-top:40px;color:var(--ink-dim);font-size:12.5px;line-height:1.7;}
 .foot a{color:var(--turf);}
 
@@ -213,24 +252,47 @@ a{color:inherit;}
     </a>
   </header>
 
+  <div class="admin-bar" id="adminBar" hidden>
+    <div><b>Режим админа</b><small>Нажмите на игрока, чтобы изменить. Сохраняется сразу для всех.</small></div>
+    <span class="admin-status" id="adminStatus" aria-live="polite"></span>
+    <div class="admin-actions">
+      <button type="button" id="resetLineupBtn">↺ Исходные составы</button>
+      <button type="button" id="adminLogoutBtn">Выйти</button>
+    </div>
+  </div>
+
   <section class="lineups" aria-label="Составы">
     <article class="team team-real">
       <div class="team-head">
         <img class="mini" src="img/real-madrid.svg" alt="">
         <div><h2>РЕАЛ</h2><small id="countReal">СОСТАВ</small></div>
       </div>
-      <ol class="roster" id="rosterReal"></ol>
+      <div class="squad" id="squadReal"></div>
     </article>
     <article class="team team-barca">
       <div class="team-head">
         <img class="mini" src="img/fc-barcelona.svg" alt="">
         <div><h2>БАРСЕЛОНА</h2><small id="countBarca">СОСТАВ</small></div>
       </div>
-      <ol class="roster" id="rosterBarca"></ol>
+      <div class="squad" id="squadBarca"></div>
     </article>
   </section>
 
-  <p class="foot">Фото игроков подтягиваются из карточек на главной странице.<br><a href="index.html">Вернуться на главную</a></p>
+  <section class="out-box" id="outBox" hidden>
+    <div class="out-head">Не играют <small>видно только админу</small></div>
+    <ol class="roster" id="outList"></ol>
+  </section>
+
+  <p class="foot">Фото игроков подтягиваются из карточек на главной странице.<br><a href="index.html">Вернуться на главную</a> · <button type="button" class="link-btn" id="adminLoginBtn">Вход для админа</button></p>
+</div>
+
+<div class="sheet" id="sheet" hidden>
+  <div class="sheet-card" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+    <div class="sheet-title" id="sheetTitle"></div>
+    <div class="sheet-sub" id="sheetSub"></div>
+    <div class="sheet-actions" id="sheetActions"></div>
+    <button type="button" class="sheet-cancel" id="sheetCancel">Закрыть</button>
+  </div>
 </div>
 
 <script>
@@ -261,24 +323,64 @@ function esc(s){ return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;"
 function initials(name){ return name.split(/\s+/).filter(w=>/^\p{L}/u.test(w)).map(w=>w[0]).slice(0,2).join("").toUpperCase(); }
 function plural(n,one,few,many){ const a=n%10,b=n%100; return a===1&&b!==11?one:a>=2&&a<=4&&(b<12||b>14)?few:many; }
 
-function renderRoster(listId, countId, players){
-  const ol = document.getElementById(listId);
-  ol.innerHTML = players.map((p,i)=>`
-    <li class="player" style="--d:${(i*0.06).toFixed(2)}s" data-id="${p.id ?? ""}">
-      <span class="num">${i+1}</span>
-      <span class="ava">${p.photo ? `<img src="${esc(p.photo)}" alt="" data-static>` : esc(initials(p.name))}</span>
-      <span class="pname">${esc(p.name)}</span>
-    </li>`).join("");
-  document.getElementById(countId).textContent = `${players.length} ${plural(players.length,"ИГРОК","ИГРОКА","ИГРОКОВ")}`;
-}
-renderRoster("rosterReal","countReal",REAL);
-renderRoster("rosterBarca","countBarca",BARCA);
+const STARTERS = 11;
+const TEAMS = {real:{name:"Реал", to:"Реал", listId:"squadReal", countId:"countReal"}, barca:{name:"Барселона", to:"Барселону", listId:"squadBarca", countId:"countBarca"}};
+/* The line-up lives in the shared database (key clasico-lineup) so an admin can change it for everyone.
+   Each player: {name, id, photo?, sub, captain}. "out" holds players taken off both squads. */
+const defaultLineup = ()=>({
+  real: REAL.map((p,i)=>({...p, sub:i>=STARTERS, captain:false})),
+  barca: BARCA.map((p,i)=>({...p, sub:i>=STARTERS, captain:false})),
+  out: []
+});
+let lineup = defaultLineup();
+const photoById = {};
+let revealed = false;
 
-/* players appear one by one when the line-up scrolls into view */
+function avatarHtml(p){
+  const src = p.photo || (p.id!==null && photoById[p.id]);
+  return src ? `<img src="${esc(src)}" alt="">` : esc(initials(p.name));
+}
+function playerRow(p, team, index, number){
+  const cls = `player${p.sub?" sub":""}${revealed?" in":""}`;
+  return `<li class="${cls}" style="--d:${(index*0.06).toFixed(2)}s" data-team="${team}" data-index="${index}" ${isAdmin?'tabindex="0" role="button"':""}>
+      <span class="num">${number}</span>
+      <span class="ava">${avatarHtml(p)}</span>
+      <span class="pname">${esc(p.name)}</span>${p.captain?`<span class="cap" title="Капитан">C</span>`:""}
+      ${isAdmin?`<span class="edit-mark" aria-hidden="true">⋯</span>`:""}
+    </li>`;
+}
+function renderSquads(){
+  Object.entries(TEAMS).forEach(([team,cfg])=>{
+    const players = lineup[team];
+    const starters = players.map((p,i)=>[p,i]).filter(([p])=>!p.sub);
+    const subs = players.map((p,i)=>[p,i]).filter(([p])=>p.sub);
+    let n = 0;
+    document.getElementById(cfg.listId).innerHTML =
+      `<div class="squad-label ${starters.length>STARTERS?"over":""}"><span>Основа</span><b>${starters.length} / ${STARTERS}</b></div>`
+      + (starters.length ? `<ol class="roster">${starters.map(([p,i])=>playerRow(p,team,i,++n)).join("")}</ol>` : `<div class="squad-empty">Пока никого</div>`)
+      + `<div class="squad-label"><span>Замена</span><b>${subs.length}</b></div>`
+      + (subs.length ? `<ol class="roster">${subs.map(([p,i])=>playerRow(p,team,i,++n)).join("")}</ol>` : `<div class="squad-empty">Нет запасных</div>`);
+    document.getElementById(cfg.countId).textContent = `${players.length} ${plural(players.length,"ИГРОК","ИГРОКА","ИГРОКОВ")}`;
+  });
+  const outBox = document.getElementById("outBox");
+  outBox.hidden = !isAdmin || !lineup.out.length;
+  document.getElementById("outList").innerHTML = lineup.out.map((p,i)=>`
+    <li class="player in">
+      <span class="ava">${avatarHtml(p)}</span>
+      <span class="pname">${esc(p.name)}</span>
+      <span class="out-btns">
+        <button type="button" class="out-btn" data-return="real" data-index="${i}">→ Реал</button>
+        <button type="button" class="out-btn" data-return="barca" data-index="${i}">→ Барса</button>
+      </span>
+    </li>`).join("");
+  if(!revealed && io) document.querySelectorAll(".lineups .squad").forEach(el=>io.observe(el));
+}
+
+/* players appear one by one when the line-up first scrolls into view */
 const io = "IntersectionObserver" in window ? new IntersectionObserver(entries=>{
-  entries.forEach(e=>{ if(e.isIntersecting){ e.target.querySelectorAll(".player").forEach(el=>el.classList.add("in")); io.unobserve(e.target); } });
-},{threshold:.15}) : null;
-document.querySelectorAll(".roster").forEach(r=>{ if(io) io.observe(r); else r.querySelectorAll(".player").forEach(el=>el.classList.add("in")); });
+  entries.forEach(e=>{ if(e.isIntersecting){ revealed = true; e.target.querySelectorAll(".player").forEach(el=>el.classList.add("in")); io.unobserve(e.target); } });
+},{threshold:.1}) : null;
+if(!io) revealed = true;
 
 /* intro overlay: remove after it plays, or on tap */
 const intro = document.getElementById("intro");
@@ -314,50 +416,224 @@ function tick(){
 }
 tick();
 
-/* photos from the main page's player cards (read-only; the page works without them) */
+/* ---------- database ---------- */
+const sbHeaders = {apikey:SUPABASE_ANON_KEY, Authorization:`Bearer ${SUPABASE_ANON_KEY}`};
 const sbGet = async query=>{
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/app_data?${query}`, {headers:{apikey:SUPABASE_ANON_KEY, Authorization:`Bearer ${SUPABASE_ANON_KEY}`}});
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/app_data?${query}`, {headers:sbHeaders});
   if(!res.ok) throw new Error(res.status);
   return res.json();
+};
+const sbSet = async (key, value)=>{
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/app_data`, {
+    method:"POST",
+    headers:{...sbHeaders, "Content-Type":"application/json", Prefer:"resolution=merge-duplicates,return=minimal"},
+    body:JSON.stringify({key, value, updated_at:new Date().toISOString()})
+  });
+  if(!res.ok) throw new Error(res.status);
 };
 // same letter folding as the main page, so "Ерқанат" finds "Ерканат" too
 const normName = s=>s.toLowerCase().replace(/ё/g,"е").replace(/ә/g,"а").replace(/қ/g,"к").replace(/[ұү]/g,"у")
   .replace(/ғ/g,"г").replace(/і/g,"и").replace(/ң/g,"н").replace(/ө/g,"о").replace(/\s+/g," ").trim();
+const allInLineup = ()=>[...lineup.real, ...lineup.barca, ...lineup.out];
+
+/* Saved line-up from the database; null = none saved yet. Throws if the database can't be reached. */
+let lineupLoaded = false; // edits are allowed only after a successful load, so defaults never overwrite a saved line-up
+async function loadLineup(){
+  const rows = await sbGet(`select=value&key=eq.clasico-lineup`);
+  lineupLoaded = true;
+  if(!rows.length) return;
+  const saved = JSON.parse(rows[0].value);
+  if(!Array.isArray(saved?.real) || !Array.isArray(saved?.barca)) return;
+  // fill photo/id from the built-in lists, so photos added to the repo later still show
+  const known = [...REAL, ...BARCA];
+  const fix = p=>{
+    const d = known.find(k=>normName(k.name)===normName(p.name)) || {};
+    return {name:String(p.name), id:p.id ?? d.id ?? null, photo:d.photo || p.photo, sub:!!p.sub, captain:!!p.captain};
+  };
+  lineup = {real:saved.real.map(fix), barca:saved.barca.map(fix), out:(saved.out||[]).map(fix)};
+}
 /* Players added on the site itself (not in the built-in list) only have an id in the database: find them by name. */
 async function linkCustomPlayers(){
-  const missing = [...REAL, ...BARCA].filter(p=>p.id===null);
+  const missing = allInLineup().filter(p=>p.id===null);
   if(!missing.length) return;
   const rows = await sbGet(`select=value&key=eq.custom-players`);
   let custom = [];
   try{ custom = JSON.parse(rows[0]?.value || "[]"); }catch(e){}
   missing.forEach(p=>{
     const found = custom.find(c=>c && c.name && normName(c.name)===normName(p.name));
-    if(!found) return;
-    p.id = found.id;
-    document.querySelectorAll(".player").forEach(li=>{
-      if(li.dataset.id==="" && li.querySelector(".pname").textContent===p.name) li.dataset.id = found.id;
-    });
+    if(found) p.id = found.id;
   });
 }
 async function loadPhotos(){
-  try{ await linkCustomPlayers(); }catch(e){ /* keep going with the known ids */ }
-  const ids = [...new Set([...REAL, ...BARCA].map(p=>p.id).filter(id=>id!==null))];
+  const ids = [...new Set(allInLineup().filter(p=>!p.photo && p.id!==null).map(p=>p.id))];
+  if(!ids.length) return;
   const keys = ids.map(id=>`"photo:${id}"`).join(",");
-  try{
-    const rows = await sbGet(`select=key,value&key=in.(${encodeURIComponent(keys)})`);
-    rows.forEach(row=>{
-      const id = row.key.slice(6);
-      if(typeof row.value!=="string" || !/^(data:image\/|https:\/\/)/.test(row.value)) return;
-      document.querySelectorAll(`.player[data-id="${id}"] .ava`).forEach(ava=>{
-        if(ava.querySelector("img[data-static]")) return; // a photo placed in the repo wins over the database one
-        const img = new Image();
-        img.alt = ""; img.src = row.value;
-        img.onload = ()=>ava.replaceChildren(img);
-      });
-    });
-  }catch(e){ /* database asleep or offline: initials stay */ }
+  const rows = await sbGet(`select=key,value&key=in.(${encodeURIComponent(keys)})`);
+  rows.forEach(row=>{
+    if(typeof row.value==="string" && /^(data:image\/|https:\/\/)/.test(row.value)) photoById[row.key.slice(6)] = row.value;
+  });
 }
-loadPhotos();
+async function init(){
+  try{ await loadLineup(); }catch(e){ /* database asleep or offline: built-in line-up, editing disabled */ }
+  renderSquads();
+  try{ await linkCustomPlayers(); }catch(e){}
+  try{ await loadPhotos(); }catch(e){}
+  renderSquads();
+}
+
+/* ---------- admin ---------- */
+let isAdmin = false;
+const adminStatus = (text, err=false)=>{ const el = document.getElementById("adminStatus"); el.textContent = text; el.classList.toggle("err", err); };
+function setAdmin(on){
+  isAdmin = on;
+  document.body.classList.toggle("is-admin", on);
+  document.getElementById("adminBar").hidden = !on;
+  document.getElementById("adminLoginBtn").hidden = on;
+  adminStatus("");
+  renderSquads();
+}
+document.getElementById("adminLoginBtn").addEventListener("click", async ()=>{
+  const pin = prompt("Код админа:");
+  if(pin===null) return;
+  try{
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/league-video-upload`, {
+      method:"POST", headers:{...sbHeaders, "Content-Type":"application/json"}, body:JSON.stringify({action:"login", pin})
+    });
+    if(!res.ok){
+      let msg = "Неверный код";
+      try{ msg = (await res.json()).error || msg; }catch(e){}
+      alert(msg); return;
+    }
+  }catch(e){ alert("Сервер недоступен. Попробуйте позже."); return; }
+  setAdmin(true);
+  if(!lineupLoaded) adminStatus("База недоступна — изменения не сохранятся. Обновите страницу позже.", true);
+});
+document.getElementById("adminLogoutBtn").addEventListener("click", ()=>setAdmin(false));
+
+let saving = Promise.resolve();
+async function commit(next){
+  if(!lineupLoaded){ alert("База была недоступна при открытии страницы, поэтому изменения не сохраняются. Обновите страницу."); return false; }
+  const prev = lineup;
+  lineup = next;
+  renderSquads();
+  adminStatus("Сохраняю…");
+  saving = saving.then(()=>sbSet("clasico-lineup", JSON.stringify({...lineup, updatedAt:Date.now()})))
+    .then(()=>adminStatus("Сохранено ✓"))
+    .catch(()=>{ lineup = prev; renderSquads(); adminStatus("Не сохранилось — проверьте интернет", true); });
+  return true;
+}
+const clone = ()=>JSON.parse(JSON.stringify(lineup));
+const other = team=>team==="real" ? "barca" : "real";
+const starterCount = (l, team)=>l[team].filter(p=>!p.sub).length;
+
+/* Moves within the same group (starters or subs): swap with the nearest neighbour of that group. */
+function moveInGroup(team, index, dir){
+  const next = clone(), list = next[team], p = list[index];
+  let j = index + dir;
+  while(j>=0 && j<list.length && list[j].sub!==p.sub) j += dir;
+  if(j<0 || j>=list.length) return;
+  [list[index], list[j]] = [list[j], list[index]];
+  commit(next);
+}
+function toggleSub(team, index){
+  const next = clone(), p = next[team][index];
+  if(p.sub && starterCount(next, team)>=STARTERS){ alert(`В основе уже ${STARTERS}. Сначала переведите кого-то в замену.`); return; }
+  p.sub = !p.sub;
+  // keep starters above subs: move the player to the end of his new group
+  next[team].splice(index,1);
+  const firstSub = next[team].findIndex(x=>x.sub);
+  next[team].splice(p.sub ? next[team].length : (firstSub===-1 ? next[team].length : firstSub), 0, p);
+  commit(next);
+}
+function toggleCaptain(team, index){
+  const next = clone(), was = next[team][index].captain;
+  next[team].forEach(p=>{ p.captain = false; });
+  next[team][index].captain = !was;
+  commit(next);
+}
+function placeInto(next, team, p){
+  p.captain = false;
+  p.sub = starterCount(next, team)>=STARTERS ? true : p.sub;
+  if(p.sub) next[team].push(p);
+  else{ const firstSub = next[team].findIndex(x=>x.sub); next[team].splice(firstSub===-1 ? next[team].length : firstSub, 0, p); }
+}
+function transfer(team, index){
+  const next = clone(), [p] = next[team].splice(index,1);
+  placeInto(next, other(team), p);
+  commit(next);
+}
+function removeFromSquad(team, index){
+  const next = clone(), [p] = next[team].splice(index,1);
+  p.captain = false; p.sub = false;
+  next.out.push(p);
+  commit(next);
+}
+function returnToSquad(index, team){
+  const next = clone(), [p] = next.out.splice(index,1);
+  p.sub = true;
+  placeInto(next, team, p);
+  commit(next);
+}
+
+/* action sheet */
+const sheet = document.getElementById("sheet");
+function closeSheet(){ sheet.hidden = true; }
+function openSheet(team, index){
+  const p = lineup[team][index];
+  const group = lineup[team].filter(x=>x.sub===p.sub);
+  const pos = group.indexOf(p);
+  document.getElementById("sheetTitle").textContent = p.name;
+  document.getElementById("sheetSub").textContent = `${TEAMS[team].name} · ${p.sub ? "замена" : "основа"}${p.captain ? " · капитан" : ""}`;
+  const actions = [
+    ["up", "⬆ Выше", pos===0],
+    ["down", "⬇ Ниже", pos===group.length-1],
+    ["sub", p.sub ? "▶ В основу" : "⇩ В замену", false, "wide"],
+    ["cap", p.captain ? "Снять капитанство" : "Ⓒ Сделать капитаном", false, "wide"],
+    ["move", `⇄ Перевести в ${TEAMS[other(team)].to}`, false, "wide"],
+    ["out", "✕ Убрать из состава", false, "wide danger"]
+  ];
+  document.getElementById("sheetActions").innerHTML = actions.map(([a,label,disabled,cls])=>
+    `<button type="button" data-act="${a}" class="${cls||""}" ${disabled?"disabled":""}>${label}</button>`).join("");
+  sheet.dataset.team = team; sheet.dataset.index = index;
+  sheet.hidden = false;
+  sheet.querySelector("[data-act]:not(:disabled)")?.focus();
+}
+document.getElementById("sheetActions").addEventListener("click", e=>{
+  const btn = e.target.closest("[data-act]");
+  if(!btn) return;
+  const team = sheet.dataset.team, index = Number(sheet.dataset.index);
+  closeSheet();
+  ({up:()=>moveInGroup(team,index,-1), down:()=>moveInGroup(team,index,1), sub:()=>toggleSub(team,index),
+    cap:()=>toggleCaptain(team,index), move:()=>transfer(team,index),
+    out:()=>{ if(confirm(`Убрать ${lineup[team][index].name} из состава? Его можно будет вернуть из списка «Не играют».`)) removeFromSquad(team,index); }
+  })[btn.dataset.act]();
+});
+document.getElementById("sheetCancel").addEventListener("click", closeSheet);
+sheet.addEventListener("click", e=>{ if(e.target===sheet) closeSheet(); });
+document.addEventListener("keydown", e=>{ if(e.key==="Escape" && !sheet.hidden) closeSheet(); });
+
+document.querySelector(".lineups").addEventListener("click", e=>{
+  if(!isAdmin) return;
+  const row = e.target.closest(".player[data-team]");
+  if(row) openSheet(row.dataset.team, Number(row.dataset.index));
+});
+document.querySelector(".lineups").addEventListener("keydown", e=>{
+  if(!isAdmin || (e.key!=="Enter" && e.key!==" ")) return;
+  const row = e.target.closest(".player[data-team]");
+  if(row){ e.preventDefault(); openSheet(row.dataset.team, Number(row.dataset.index)); }
+});
+document.getElementById("outList").addEventListener("click", e=>{
+  const btn = e.target.closest("[data-return]");
+  if(btn && isAdmin) returnToSquad(Number(btn.dataset.index), btn.dataset.return);
+});
+document.getElementById("resetLineupBtn").addEventListener("click", ()=>{
+  if(!confirm("Вернуть исходные составы? Все изменения админа пропадут.")) return;
+  const next = defaultLineup();
+  next.real.concat(next.barca).forEach(p=>{ const cur = allInLineup().find(x=>x.name===p.name); if(cur) p.id = cur.id; });
+  commit(next);
+});
+
+init();
 </script>
 </body>
 </html>
