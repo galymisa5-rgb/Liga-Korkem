@@ -310,7 +310,7 @@ const REAL = [
   {name:"Нұрбол", id:5}, {name:"Берік балдыз", id:17}, {name:"Біржан", id:null, photo:"img/players/birzhan.webp"}
 ];
 const BARCA = [
-  {name:"Самат С", id:29}, {name:"Асет", id:9}, {name:"Дархан", id:1}, {name:"Берік", id:31, photo:"img/players/berik.webp"},
+  {name:"Самат С", id:34}, {name:"Асет", id:9}, {name:"Дархан", id:1}, {name:"Берік", id:31, photo:"img/players/berik.webp"},
   {name:"Айдос", id:25, photo:"img/players/aidos.webp"}, {name:"Ерден", id:16}, {name:"Асхат", id:10}, {name:"Жандос", id:7},
   {name:"Нұржан Барса", id:27}, {name:"Алдияр", id:12, photo:"img/players/aldiyar.webp"}, {name:"Сәндібек", id:8}, {name:"Алибек", id:21},
   {name:"Алихан", id:6}, {name:"Алишер", id:null, photo:"img/players/alisher.webp"}
@@ -448,7 +448,8 @@ async function loadLineup(){
   const known = [...REAL, ...BARCA];
   const fix = p=>{
     const d = known.find(k=>normName(k.name)===normName(p.name)) || {};
-    return {name:String(p.name), id:p.id ?? d.id ?? null, photo:d.photo || p.photo, sub:!!p.sub, captain:!!p.captain};
+    // the id written in this file wins over a saved one, so a corrected link applies to old saves too
+    return {name:String(p.name), id:d.id ?? p.id ?? null, photo:d.photo || p.photo, sub:!!p.sub, captain:!!p.captain};
   };
   lineup = {real:saved.real.map(fix), barca:saved.barca.map(fix), out:(saved.out||[]).map(fix)};
 }
