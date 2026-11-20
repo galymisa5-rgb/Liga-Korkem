@@ -491,14 +491,71 @@ function linkCustomPlayers(){
     if(found) p.id = found.id;
   });
 }
-async function loadPhotos(){
-  const ids = [...new Set(allInLineup().filter(p=>!p.photo && p.id!==null).map(p=>p.id))];
-  if(!ids.length) return;
-  const keys = ids.map(id=>`"photo:${id}"`).join(",");
-  const rows = await sbGet(`select=key,value&key=in.(${encodeURIComponent(keys)})`);
-  rows.forEach(row=>{
-    if(typeof row.value==="string" && /^(data:image\/|https:\/\/)/.test(row.value)) photoById[row.key.slice(6)] = row.value;
+/* Card photos are ~250 KB each; fetching them all in one response (~5 MB) often failed on phones.
+   Now: small thumbnails are kept on the phone, only changed photos are downloaded, one per request
+   (3 at a time, with retries), and each appears as soon as it arrives. */
+const THUMBS_KEY = "clasico-photo-thumbs-v1";
+const readThumbs = ()=>{ try{ return JSON.parse(localStorage.getItem(THUMBS_KEY)) || {}; }catch(e){ return {}; } };
+const writeThumbs = t=>{ try{ localStorage.setItem(THUMBS_KEY, JSON.stringify(t)); }catch(e){} };
+let renderQueued = false;
+const queueRender = ()=>{ if(!renderQueued){ renderQueued = true; requestAnimationFrame(()=>{ renderQueued = false; renderSquads(); }); } };
+function makeThumb(dataUrl){
+  return new Promise(res=>{
+    const im = new Image();
+    im.onload = ()=>{
+      try{
+        const S = 128, c = document.createElement("canvas"); c.width = c.height = S;
+        const side = Math.min(im.width, im.height), sy = Math.max(0, (im.height-side)*0.25);
+        c.getContext("2d").drawImage(im, (im.width-side)/2, sy, side, side, 0, 0, S, S);
+        res(c.toDataURL("image/jpeg", .82));
+      }catch(e){ res(dataUrl); }
+    };
+    im.onerror = ()=>res(null);
+    im.src = dataUrl;
   });
+}
+async function fetchPhoto(id, tries=3){
+  for(let i=0;i<tries;i++){
+    try{
+      const rows = await sbGet(`select=value,updated_at&key=eq.${encodeURIComponent("photo:"+id)}`);
+      return rows[0] || null;
+    }catch(e){ if(i<tries-1) await new Promise(r=>setTimeout(r, 1200*(i+1))); }
+  }
+  throw new Error("photo " + id);
+}
+let photoRetryLeft = 1;
+async function loadPhotos(){
+  const ids = [...new Set(allInLineup().filter(p=>!p.photo && p.id!==null).map(p=>String(p.id)))];
+  if(!ids.length) return;
+  const thumbs = readThumbs();
+  ids.forEach(id=>{ if(thumbs[id]?.d) photoById[id] = thumbs[id].d; });
+  queueRender();
+  // which photos changed since they were saved on this phone (tiny request: no images)
+  let stamps = null;
+  try{
+    const rows = await sbGet(`select=key,updated_at&key=in.(${encodeURIComponent(ids.map(id=>`"photo:${id}"`).join(","))})`);
+    stamps = Object.fromEntries(rows.map(r=>[r.key.slice(6), r.updated_at]));
+  }catch(e){}
+  const todo = ids.filter(id=>stamps ? (id in stamps && thumbs[id]?.u!==stamps[id]) : !thumbs[id]);
+  let next = 0;
+  const worker = async ()=>{
+    while(next < todo.length){
+      const id = todo[next++];
+      try{
+        const row = await fetchPhoto(id);
+        if(!row || typeof row.value!=="string" || !/^(data:image\/|https:\/\/)/.test(row.value)) continue;
+        const thumb = await makeThumb(row.value);
+        if(!thumb) continue;
+        photoById[id] = thumb;
+        thumbs[id] = {u:row.updated_at, d:thumb};
+        writeThumbs(thumbs);
+        queueRender();
+      }catch(e){ failed = true; /* stays as initials (or its saved thumbnail) for now */ }
+    }
+  };
+  let failed = false;
+  await Promise.all([worker(), worker(), worker()]);
+  if(failed && photoRetryLeft-- > 0) setTimeout(()=>loadPhotos().catch(()=>{}), 8000); // one more round for the ones that didn't come
 }
 async function init(){
   try{ await loadLineup(); }
